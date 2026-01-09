@@ -1,0 +1,187 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LogIn } from 'lucide-react';
+import PlayerSection from '../components/PlayerSection';
+import MatchSection from '../components/MatchSection';
+import MediaSection from '../components/MediaSection';
+import RegistrationForm from '../components/RegistrationForm';
+import AchievementsCarousel from '../components/AchievementsCarousel';
+
+export default function MainApp() {
+    const [joinModalOpen, setJoinModalOpen] = useState(false);
+    const navigate = useNavigate();
+
+    const scrollToSection = (sectionId) => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    return (
+        <div style={{ fontFamily: '"Outfit", sans-serif' }}>
+            {/* Header */}
+            <header style={{
+                background: 'linear-gradient(135deg, var(--primary-color) 0%, #1e3a8a 100%)',
+                color: 'white',
+                padding: '1rem 0',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+            }}>
+                <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '30px', height: '30px', backgroundColor: 'var(--secondary-color)', borderRadius: '50%' }}></div>
+                        Spartans
+                    </h1>
+                    <nav>
+                        <ul style={{ display: 'flex', gap: '30px', fontWeight: '500', alignItems: 'center' }}>
+                            <li><button onClick={() => scrollToSection('home')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1rem' }}>Home</button></li>
+                            <li><button onClick={() => scrollToSection('about')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1rem' }}>About</button></li>
+                            <li><button onClick={() => scrollToSection('media')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1rem' }}>Media</button></li>
+                            <li><button onClick={() => scrollToSection('matches')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1rem' }}>Matches</button></li>
+                            <li><button onClick={() => scrollToSection('team')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1rem' }}>Team</button></li>
+                            <li><button onClick={() => setJoinModalOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--secondary-color)', cursor: 'pointer', fontSize: '1rem' }}>Join Us</button></li>
+                            <li>
+                                <button
+                                    onClick={() => navigate('/admin')}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: '1px solid rgba(255,255,255,0.3)',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        fontSize: '1rem',
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                    title="Admin Login"
+                                >
+                                    <LogIn size={18} />
+                                    Admin
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </header>
+
+            {/* Hero Section */}
+            <section id="home" style={{
+                background: 'linear-gradient(135deg, var(--primary-color) 0%, #1e3a8a 100%)',
+                color: 'white',
+                padding: '8rem 0 6rem',
+                textAlign: 'center'
+            }}>
+                <div className="container">
+                    <h2 style={{ fontSize: '4rem', fontWeight: '800', marginBottom: '1rem', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+                        Welcome to Spartans Cricket Club
+                    </h2>
+                    <p style={{ fontSize: '1.5rem', marginBottom: '2rem', opacity: 0.9 }}>
+                        Champions on and off the field
+                    </p>
+                    <button
+                        onClick={() => setJoinModalOpen(true)}
+                        style={{
+                            background: 'var(--secondary-color)',
+                            color: 'var(--primary-color)',
+                            padding: '1rem 3rem',
+                            fontSize: '1.2rem',
+                            fontWeight: '700',
+                            border: 'none',
+                            borderRadius: '50px',
+                            cursor: 'pointer',
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+                            transition: 'transform 0.2s'
+                        }}
+                        onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                    >
+                        Join Our Team
+                    </button>
+                </div>
+            </section>
+
+            {/* About Section */}
+            <section id="about" style={{ padding: '6rem 0', backgroundColor: 'white' }}>
+                <div className="container">
+                    <h3 style={{ fontSize: '3rem', fontWeight: '800', textAlign: 'center', marginBottom: '3rem', color: 'var(--primary-color)' }}>
+                        About Us
+                    </h3>
+                    <div style={{ maxWidth: '800px', margin: '0 auto', fontSize: '1.2rem', lineHeight: '1.8', color: '#333' }}>
+                        <p style={{ marginBottom: '1.5rem' }}>
+                            Founded in 2010, Spartans Cricket Club has been a cornerstone of our community's sporting excellence.
+                            We bring together passionate cricketers of all skill levels, fostering talent and sportsmanship.
+                        </p>
+                        <p>
+                            With state-of-the-art facilities and experienced coaches, we provide the perfect environment for
+                            players to develop their skills and compete at the highest levels.
+                        </p>
+                    </div>
+                    <AchievementsCarousel />
+                </div>
+            </section>
+
+            {/* Media, Matches & Team Sections */}
+            <div id="media">
+                <MediaSection />
+            </div>
+
+            <div id="matches">
+                <MatchSection />
+            </div>
+
+            <div id="team">
+                <PlayerSection />
+            </div>
+
+            {/* Join Us Modal */}
+            {joinModalOpen && (
+                <div
+                    onClick={() => setJoinModalOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.7)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '2rem'
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: 'white',
+                            borderRadius: '20px',
+                            maxWidth: '600px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            overflow: 'auto',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                        }}
+                    >
+                        <RegistrationForm onClose={() => setJoinModalOpen(false)} />
+                    </div>
+                </div>
+            )}
+
+            {/* Footer */}
+            <footer style={{ background: 'var(--primary-color)', color: 'white', padding: '2rem 0', textAlign: 'center' }}>
+                <div className="container">
+                    <p>&copy; 2025 Spartans Cricket Club. All rights reserved.</p>
+                </div>
+            </footer>
+        </div>
+    );
+}

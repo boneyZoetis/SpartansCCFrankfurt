@@ -1,0 +1,256 @@
+/* Header */
+/* Header */
+.home-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1.5rem 0;
+    /* Increased padding slightly */
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.home-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 95%;
+    /* Move content more to the edges */
+}
+
+.home-logo {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.logo-icon {
+    width: 24px;
+    height: 24px;
+    background-color: var(--secondary-color);
+    border-radius: 50%;
+}
+
+.home-nav ul {
+    display: flex;
+    gap: 15px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+}
+
+.admin-menu-item {
+    margin-left: 30px;
+    position: relative;
+    padding-left: 30px;
+}
+
+.admin-menu-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    /* Center relative to item height */
+    transform: translateY(-50%);
+    width: 1px;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    opacity: 0.9;
+    font-size: inherit;
+    font-family: inherit;
+    font-weight: inherit;
+}
+
+.nav-btn:hover {
+    opacity: 1;
+    color: var(--secondary-color);
+}
+
+.nav-btn.highlight {
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+/* Mobile Nav Toggle */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(rgba(30, 58, 138, 0.5), rgba(30, 58, 138, 0.4)), url("/images/home-bg.jpg") center/cover;
+    position: relative;
+    color: white;
+    min-height: 90vh;
+    padding: 0;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-title {
+    font-size: 4rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 3rem;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+    opacity: 0.95;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2.5rem;
+}
+
+/* Stats Section */
+.stats-section {
+    background-color: var(--secondary-color);
+    padding: 1rem 0;
+    /* Reduced padding to fit screen better */
+    margin-top: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    text-align: center;
+}
+
+.stat-item {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    /* Reduced font size */
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    /* Reduced label size */
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #4b5563;
+    margin-top: 0.25rem;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+    .home-header {
+        padding: 1rem 0;
+    }
+
+    .home-header .container {
+        flex-wrap: wrap;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .home-nav {
+        width: 100%;
+        display: none;
+        /* Hidden by default on mobile */
+        margin-top: 1rem;
+    }
+
+    .home-nav.open {
+        display: block;
+    }
+
+    .home-nav ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .admin-menu-item {
+        margin-left: 0;
+        padding-left: 0;
+    }
+
+    .admin-menu-item::before {
+        display: none;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        padding: 0 1rem;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        padding: 0 2rem;
+    }
+
+    .hero-buttons button {
+        width: 100%;
+    }
+
+    /* Stats on mobile */
+    .stats-section {
+        margin-top: 0;
+    }
+
+    .stats-container {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .stat-divider {
+        display: none;
+        /* Hide vertical dividers on mobile */
+    }
+
+    /* Sections */
+    .about-title {
+        font-size: 2rem !important;
+        /* Override inline if needed, but better to use class */
+    }
+}

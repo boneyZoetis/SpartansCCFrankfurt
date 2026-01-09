@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spartans Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .section {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.75rem;
+            color: #333;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-edit {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .btn-cancel {
+            background: #e5e7eb;
+            color: #374151;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>⚡ Spartans Admin Dashboard</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('players')">Players</button>
+            <button class="tab" onclick="switchTab('matches')">Matches</button>
+        </div>
+
+        <!-- Players Section -->
+        <div id="players-section" class="section active">
+            <div class="section-header">
+                <h2>Manage Players</h2>
+                <button class="btn-primary" onclick="showAddPlayerModal()">+ Add Player</button>
+            </div>
+            <table id="players-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Batting</th>
+                        <th>Bowling</th>
+                        <th>Matches</th>
+                        <th>Runs</th>
+                        <th>Wickets</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="players-tbody"></tbody>
+            </table>
+        </div>
+
+        <!-- Matches Section -->
+        <div id="matches-section" class="section">
+            <div class="section-header">
+                <h2>Manage Matches</h2>
+                <button class="btn-primary" onclick="showAddMatchModal()">+ Add Match</button>
+            </div>
+            <table id="matches-table">
+                <thead>
+                    <tr>
+                        <th>Opponent</th>
+                        <th>Date & Time</th>
+                        <th>Venue</th>
+                        <th>Status</th>
+                        <th>Result</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="matches-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Player Modal -->
+    <div id="player-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="player-modal-title">Add Player</h3>
+                <button class="close-btn" onclick="closePlayerModal()">&times;</button>
+            </div>
+            <form id="player-form" onsubmit="savePlayer(event)">
+                <input type="hidden" id="player-id">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" id="player-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Role *</label>
+                    <select id="player-role" required>
+                        <option value="">Select Role</option>
+                        <option value="Batsman">Batsman</option>
+                        <option value="Bowler">Bowler</option>
+                        <option value="All-rounder">All-rounder</option>
+                        <option value="Wicket-keeper">Wicket-keeper</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Batting Style</label>
+                    <input type="text" id="player-batting" placeholder="e.g., Right-handed">
+                </div>
+                <div class="form-group">
+                    <label>Bowling Style</label>
+                    <input type="text" id="player-bowling" placeholder="e.g., Right-arm fast">
+                </div>
+                <div class="form-group">
+                    <label>Matches Played</label>
+                    <input type="number" id="player-matches" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Total Runs</label>
+                    <input type="number" id="player-runs" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Total Wickets</label>
+                    <input type="number" id="player-wickets" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" id="player-image" placeholder="https://...">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closePlayerModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Match Modal -->
+    <div id="match-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="match-modal-title">Add Match</h3>
+                <button class="close-btn" onclick="closeMatchModal()">&times;</button>
+            </div>
+            <form id="match-form" onsubmit="saveMatch(event)">
+                <input type="hidden" id="match-id">
+                <div class="form-group">
+                    <label>Opponent *</label>
+                    <input type="text" id="match-opponent" required>
+                </div>
+                <div class="form-group">
+                    <label>Date & Time *</label>
+                    <input type="datetime-local" id="match-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Venue *</label>
+                    <input type="text" id="match-venue" required>
+                </div>
+                <div class="form-group">
+                    <label>Status *</label>
+                    <select id="match-status" required>
+                        <option value="">Select Status</option>
+                        <option value="Upcoming">Upcoming</option>
+                        <option value="Live">Live</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Result</label>
+                    <input type="text" id="match-result" placeholder="e.g., Won by 20 runs or VS">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeMatchModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api';
+
+        // Check authentication
+        if (!localStorage.getItem('adminToken')) {
+            window.location.href = 'login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'login.html';
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`${tab}-section`).classList.add('active');
+        }
+
+        // Players Management
+        async function loadPlayers() {
+            const response = await fetch(`${API_URL}/players`);
+            const players = await response.json();
+            const tbody = document.getElementById('players-tbody');
+            tbody.innerHTML = players.map(p => `
+                <tr>
+                    <td>${p.name}</td>
+                    <td>${p.role}</td>
+                    <td>${p.battingStyle || '-'}</td>
+                    <td>${p.bowlingStyle || '-'}</td>
+                    <td>${p.matches}</td>
+                    <td>${p.runs}</td>
+                    <td>${p.wickets}</td>
+                    <td>
+                        <button class="btn-edit" onclick='editPlayer(${JSON.stringify(p)})'>Edit</button>
+                        <button class="btn-danger" onclick="deletePlayer(${p.id})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showAddPlayerModal() {
+            document.getElementById('player-modal-title').textContent = 'Add Player';
+            document.getElementById('player-form').reset();
+            document.getElementById('player-id').value = '';
+            document.getElementById('player-modal').classList.add('active');
+        }
+
+        function editPlayer(player) {
+            document.getElementById('player-modal-title').textContent = 'Edit Player';
+            document.getElementById('player-id').value = player.id;
+            document.getElementById('player-name').value = player.name;
+            document.getElementById('player-role').value = player.role;
+            document.getElementById('player-batting').value = player.battingStyle || '';
+            document.getElementById('player-bowling').value = player.bowlingStyle || '';
+            document.getElementById('player-matches').value = player.matches;
+            document.getElementById('player-runs').value = player.runs;
+            document.getElementById('player-wickets').value = player.wickets;
+            document.getElementById('player-image').value = player.imageUrl || '';
+            document.getElementById('player-modal').classList.add('active');
+        }
+
+        function closePlayerModal() {
+            document.getElementById('player-modal').classList.remove('active');
+        }
+
+        async function savePlayer(event) {
+            event.preventDefault();
+            const id = document.getElementById('player-id').value;
+            const data = {
+                name: document.getElementById('player-name').value,
+                role: document.getElementById('player-role').value,
+                battingStyle: document.getElementById('player-batting').value,
+                bowlingStyle: document.getElementById('player-bowling').value,
+                matches: parseInt(document.getElementById('player-matches').value),
+                runs: parseInt(document.getElementById('player-runs').value),
+                wickets: parseInt(document.getElementById('player-wickets').value),
+                imageUrl: document.getElementById('player-image').value
+            };
+
+            const url = id ? `${API_URL}/players/${id}` : `${API_URL}/players`;
+            const method = id ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            closePlayerModal();
+            loadPlayers();
+        }
+
+        async function deletePlayer(id) {
+            if (confirm('Are you sure you want to delete this player?')) {
+                await fetch(`${API_URL}/players/${id}`, { method: 'DELETE' });
+                loadPlayers();
+            }
+        }
+
+        // Matches Management
+        async function loadMatches() {
+            const response = await fetch(`${API_URL}/matches`);
+            const matches = await response.json();
+            const tbody = document.getElementById('matches-tbody');
+            tbody.innerHTML = matches.map(m => `
+                <tr>
+                    <td>${m.opponent}</td>
+                    <td>${new Date(m.matchDate).toLocaleString()}</td>
+                    <td>${m.venue}</td>
+                    <td><span style="padding: 0.25rem 0.75rem; background: ${m.status === 'Upcoming' ? '#dbeafe' : m.status === 'Live' ? '#fef3c7' : '#d1fae5'}; border-radius: 12px; font-size: 0.875rem; font-weight: 600;">${m.status}</span></td>
+                    <td>${m.result}</td>
+                    <td>
+                        <button class="btn-edit" onclick='editMatch(${JSON.stringify(m).replace(/'/g, "\\'")})'> Edit</button>
+                        <button class="btn-danger" onclick="deleteMatch(${m.id})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showAddMatchModal() {
+            document.getElementById('match-modal-title').textContent = 'Add Match';
+            document.getElementById('match-form').reset();
+            document.getElementById('match-id').value = '';
+            document.getElementById('match-modal').classList.add('active');
+        }
+
+        function editMatch(match) {
+            document.getElementById('match-modal-title').textContent = 'Edit Match';
+            document.getElementById('match-id').value = match.id;
+            document.getElementById('match-opponent').value = match.opponent;
+            document.getElementById('match-date').value = new Date(match.matchDate).toISOString().slice(0, 16);
+            document.getElementById('match-venue').value = match.venue;
+            document.getElementById('match-status').value = match.status;
+            document.getElementById('match-result').value = match.result;
+            document.getElementById('match-modal').classList.add('active');
+        }
+
+        function closeMatchModal() {
+            document.getElementById('match-modal').classList.remove('active');
+        }
+
+        async function saveMatch(event) {
+            event.preventDefault();
+            const id = document.getElementById('match-id').value;
+            const data = {
+                opponent: document.getElementById('match-opponent').value,
+                matchDate: document.getElementById('match-date').value,
+                venue: document.getElementById('match-venue').value,
+                status: document.getElementById('match-status').value,
+                result: document.getElementById('match-result').value
+            };
+
+            const url = id ? `${API_URL}/matches/${id}` : `${API_URL}/matches`;
+            const method = id ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            closeMatchModal();
+            loadMatches();
+        }
+
+        async function deleteMatch(id) {
+            if (confirm('Are you sure you want to delete this match?')) {
+                await fetch(`${API_URL}/matches/${id}`, { method: 'DELETE' });
+                loadMatches();
+            }
+        }
+
+        // Initialize
+        loadPlayers();
+        loadMatches();
+    </script>
+</body>
+
+</html>

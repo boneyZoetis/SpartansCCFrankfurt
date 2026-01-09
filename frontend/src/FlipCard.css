@@ -1,0 +1,79 @@
+/* Flip Card Styles */
+.flip-card {
+    background-color: transparent;
+    width: 100%;
+    height: 350px;
+    perspective: 1000px;
+    /* Remove if you don't want the 3D effect */
+    cursor: pointer;
+    z-index: 1;
+}
+
+.flip-card.flipped {
+    z-index: 10;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.flip-card.flipped .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.flip-card-front {
+    background-color: #fff;
+    color: black;
+}
+
+.flip-card-back {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #1e1e2f 100%);
+    color: white;
+    transform: rotateY(180deg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+
+/* Enhancements for beautiful UI */
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #fbbf24;
+    /* Secondary Gold */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-value {
+    font-weight: bold;
+}
