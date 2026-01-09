@@ -625,7 +625,7 @@ function AdminDashboard() {
                                 galleryItems.map(item => (
                                     <tr key={item.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                         <td style={{ padding: '1rem', width: '120px' }}>
-                                            <img src={item.imageUrl} alt={item.caption} style={{ width: '100px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
+                                            <img src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : API_URL + item.imageUrl) : ''} alt={item.caption} style={{ width: '100px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
                                         </td>
                                         <td style={{ padding: '1rem', fontWeight: '500' }}>{item.category}</td>
                                         <td style={{ padding: '1rem' }}>{item.caption}</td>

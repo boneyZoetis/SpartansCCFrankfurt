@@ -93,7 +93,7 @@ public class PlayerController {
         // Save file
         java.nio.file.Files.copy(image.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-        return "http://localhost:8080/uploads/" + filename;
+        return "/uploads/" + filename;
     }
 
     @DeleteMapping("/{id}")

@@ -41,8 +41,8 @@ public class GalleryController {
         // Save file
         java.nio.file.Files.copy(image.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-        // Create item with URL
-        String fileUrl = "http://localhost:8080/uploads/" + filename;
+        // Create item with URL - save relative path
+        String fileUrl = "/uploads/" + filename;
         GalleryItem item = new GalleryItem(category, fileUrl, caption);
 
         return galleryRepository.save(item);

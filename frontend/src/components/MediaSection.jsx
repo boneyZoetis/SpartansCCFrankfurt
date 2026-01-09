@@ -17,7 +17,8 @@ export default function MediaSection() {
                     if (!acc[item.category]) {
                         acc[item.category] = [];
                     }
-                    acc[item.category].push({ url: item.imageUrl, caption: item.caption });
+                    const imageUrl = item.imageUrl.startsWith('http') ? item.imageUrl : API_URL + item.imageUrl;
+                    acc[item.category].push({ url: imageUrl, caption: item.caption });
                     return acc;
                 }, {});
 

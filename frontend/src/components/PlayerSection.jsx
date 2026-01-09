@@ -45,7 +45,7 @@ export default function PlayerSection() {
                                     <div className="flip-card-front">
                                         <div style={{ height: '75%', position: 'relative' }}>
                                             <img
-                                                src={player.imageUrl || 'https://via.placeholder.com/300x300?text=Player'}
+                                                src={player.imageUrl ? (player.imageUrl.startsWith('http') ? player.imageUrl : API_URL + player.imageUrl) : 'https://via.placeholder.com/300x300?text=Player'}
                                                 alt={player.name}
                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                 onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300x300?text=No+Image'; }}
