@@ -18,4 +18,9 @@ public class HomeController {
         response.put("club", "Spartans Cricket Club");
         return response;
     }
+
+    @GetMapping("/api/health")
+    public String healthCheck() {
+        return "OK";
+    }
 }
