@@ -20,6 +20,11 @@ public class Player {
     private int wickets;
     private String imageUrl;
 
+    @jakarta.persistence.Lob
+    @jakarta.persistence.Column(length = 1000000) // Increase limit for large images
+    private byte[] imageData;
+    private String imageContentType;
+
     public Player() {
     }
 
@@ -106,5 +111,21 @@ public class Player {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public byte[] getImageData() {
+        return imageData;
+    }
+
+    public void setImageData(byte[] imageData) {
+        this.imageData = imageData;
+    }
+
+    public String getImageContentType() {
+        return imageContentType;
+    }
+
+    public void setImageContentType(String imageContentType) {
+        this.imageContentType = imageContentType;
     }
 }

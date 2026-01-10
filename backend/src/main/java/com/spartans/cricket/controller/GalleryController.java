@@ -22,30 +22,41 @@ public class GalleryController {
         return galleryRepository.findAll();
     }
 
+    @CrossOrigin(origins = "*") // Allow all origins for image serving
+    @GetMapping("/{id}/image")
+    public org.springframework.http.ResponseEntity<byte[]> getGalleryImage(@PathVariable Long id) {
+        GalleryItem item = galleryRepository.findById(id).orElse(null);
+        if (item != null && item.getImageData() != null) {
+            return org.springframework.http.ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.parseMediaType(
+                            item.getImageContentType() != null ? item.getImageContentType() : "image/jpeg"))
+                    .body(item.getImageData());
+        }
+        return org.springframework.http.ResponseEntity.notFound().build();
+    }
+
     @PostMapping
     public GalleryItem createGalleryItem(
             @RequestParam("image") MultipartFile image,
             @RequestParam("caption") String caption,
             @RequestParam("category") String category) throws java.io.IOException {
-        // Create uploads directory if not exists
-        String uploadDir = "./uploads/";
-        java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir);
-        if (!java.nio.file.Files.exists(uploadPath)) {
-            java.nio.file.Files.createDirectories(uploadPath);
+
+        GalleryItem item = new GalleryItem();
+        item.setCaption(caption);
+        item.setCategory(category);
+
+        if (image != null && !image.isEmpty()) {
+            item.setImageData(image.getBytes());
+            item.setImageContentType(image.getContentType());
         }
 
-        // Generate unique filename
-        String filename = java.util.UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
-        java.nio.file.Path filePath = uploadPath.resolve(filename);
+        GalleryItem savedItem = galleryRepository.save(item);
+        if (savedItem.getImageData() != null) {
+            savedItem.setImageUrl("/api/gallery/" + savedItem.getId() + "/image");
+            return galleryRepository.save(savedItem);
+        }
 
-        // Save file
-        java.nio.file.Files.copy(image.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
-        // Create item with URL - save relative path
-        String fileUrl = "/uploads/" + filename;
-        GalleryItem item = new GalleryItem(category, fileUrl, caption);
-
-        return galleryRepository.save(item);
+        return savedItem;
     }
 
     @DeleteMapping("/{id}")

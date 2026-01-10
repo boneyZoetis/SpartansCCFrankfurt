@@ -21,6 +21,19 @@ public class PlayerController {
         return playerRepository.findAll();
     }
 
+    @CrossOrigin(origins = "*") // Allow all origins for image serving
+    @GetMapping("/{id}/image")
+    public org.springframework.http.ResponseEntity<byte[]> getPlayerImage(@PathVariable Long id) {
+        Player player = playerRepository.findById(id).orElse(null);
+        if (player != null && player.getImageData() != null) {
+            return org.springframework.http.ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.parseMediaType(
+                            player.getImageContentType() != null ? player.getImageContentType() : "image/jpeg"))
+                    .body(player.getImageData());
+        }
+        return org.springframework.http.ResponseEntity.notFound().build();
+    }
+
     @PostMapping
     public Player addPlayer(
             @RequestParam("name") String name,
@@ -31,10 +44,6 @@ public class PlayerController {
             @RequestParam("runs") int runs,
             @RequestParam("wickets") int wickets,
             @RequestParam(value = "image", required = false) MultipartFile image) throws java.io.IOException {
-        String imageUrl = "";
-        if (image != null && !image.isEmpty()) {
-            imageUrl = saveImage(image);
-        }
 
         Player player = new Player();
         player.setName(name);
@@ -44,9 +53,19 @@ public class PlayerController {
         player.setMatches(matches);
         player.setRuns(runs);
         player.setWickets(wickets);
-        player.setImageUrl(imageUrl);
 
-        return playerRepository.save(player);
+        if (image != null && !image.isEmpty()) {
+            player.setImageData(image.getBytes());
+            player.setImageContentType(image.getContentType());
+        }
+
+        Player savedPlayer = playerRepository.save(player);
+        if (savedPlayer.getImageData() != null) {
+            savedPlayer.setImageUrl("/api/players/" + savedPlayer.getId() + "/image");
+            return playerRepository.save(savedPlayer);
+        }
+
+        return savedPlayer;
     }
 
     @PutMapping("/{id}")
@@ -63,8 +82,9 @@ public class PlayerController {
         Player player = playerRepository.findById(id).orElseThrow();
 
         if (image != null && !image.isEmpty()) {
-            String imageUrl = saveImage(image);
-            player.setImageUrl(imageUrl);
+            player.setImageData(image.getBytes());
+            player.setImageContentType(image.getContentType());
+            player.setImageUrl("/api/players/" + id + "/image");
         }
 
         player.setName(name);
@@ -76,24 +96,6 @@ public class PlayerController {
         player.setWickets(wickets);
 
         return playerRepository.save(player);
-    }
-
-    private String saveImage(MultipartFile image) throws java.io.IOException {
-        // Create uploads directory if not exists
-        String uploadDir = "./uploads/";
-        java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir);
-        if (!java.nio.file.Files.exists(uploadPath)) {
-            java.nio.file.Files.createDirectories(uploadPath);
-        }
-
-        // Generate unique filename
-        String filename = java.util.UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
-        java.nio.file.Path filePath = uploadPath.resolve(filename);
-
-        // Save file
-        java.nio.file.Files.copy(image.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
-        return "/uploads/" + filename;
     }
 
     @DeleteMapping("/{id}")
