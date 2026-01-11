@@ -21,8 +21,19 @@ public class DataInitializer {
         @Bean
         CommandLineRunner initData(PlayerRepository playerRepository, MatchFixtureRepository matchRepository,
                         com.spartans.cricket.repository.ClubStatsRepository clubStatsRepository,
-                        AchievementRepository achievementRepository) {
+                        AchievementRepository achievementRepository,
+                        org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
                 return args -> {
+                        // Fix Schema: Ensure approved column exists (Hibernate ddl-auto=update failed)
+                        try {
+                                jdbcTemplate.execute(
+                                                "ALTER TABLE player ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT FALSE");
+                                // Update existing players to be approved (migration)
+                                jdbcTemplate.execute("UPDATE player SET approved = TRUE WHERE approved IS NULL");
+                        } catch (Exception e) {
+                                System.out.println("Schema update warning (might already exist): " + e.getMessage());
+                        }
+
                         // Init Players
                         if (playerRepository.count() == 0) {
                                 List<Player> players = List.of(

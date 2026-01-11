@@ -210,6 +210,10 @@ export default function PlayerRegistration() {
                                             onChange={(e) => {
                                                 const file = e.target.files[0];
                                                 if (file) {
+                                                    if (file.size > 10 * 1024 * 1024) {
+                                                        showPopup("File too large. Maximum size is 10MB.");
+                                                        return;
+                                                    }
                                                     setImage(file);
                                                     setPreview(URL.createObjectURL(file));
                                                 }
