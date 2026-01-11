@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/players")
-@CrossOrigin(origins = { "http://localhost:5173", "file://", "null" })
 public class PlayerController {
 
     @Autowired
@@ -21,7 +20,6 @@ public class PlayerController {
         return playerRepository.findAll();
     }
 
-    @CrossOrigin(origins = "*") // Allow all origins for image serving
     @GetMapping("/{id}/image")
     public org.springframework.http.ResponseEntity<byte[]> getPlayerImage(@PathVariable Long id) {
         Player player = playerRepository.findById(id).orElse(null);

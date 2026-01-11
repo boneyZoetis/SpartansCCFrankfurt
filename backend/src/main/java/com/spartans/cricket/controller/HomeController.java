@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
 public class HomeController {
 
     @GetMapping("/api/welcome")

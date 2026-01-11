@@ -9,7 +9,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/matches")
-@CrossOrigin(origins = { "http://localhost:5173", "file://", "null" })
 public class MatchFixtureController {
 
     @Autowired

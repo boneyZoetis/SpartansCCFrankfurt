@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/gallery")
-@CrossOrigin(origins = "http://localhost:5173")
 public class GalleryController {
 
     @Autowired
@@ -22,7 +21,6 @@ public class GalleryController {
         return galleryRepository.findAll();
     }
 
-    @CrossOrigin(origins = "*") // Allow all origins for image serving
     @GetMapping("/{id}/image")
     public org.springframework.http.ResponseEntity<byte[]> getGalleryImage(@PathVariable Long id) {
         GalleryItem item = galleryRepository.findById(id).orElse(null);

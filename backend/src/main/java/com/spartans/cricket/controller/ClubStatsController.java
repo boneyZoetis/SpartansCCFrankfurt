@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/stats")
-@CrossOrigin(origins = { "http://localhost:5173", "file://", "null" })
 public class ClubStatsController {
 
     @Autowired
