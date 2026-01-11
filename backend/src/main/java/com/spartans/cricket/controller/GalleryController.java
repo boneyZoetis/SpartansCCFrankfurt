@@ -38,12 +38,12 @@ public class GalleryController {
     @PostMapping
     public GalleryItem createGalleryItem(
             @RequestParam("image") MultipartFile image,
-            @RequestParam("caption") String caption,
+            @RequestParam(value = "caption", required = false) String caption,
             @RequestParam("category") String category,
             @RequestParam(value = "subCategory", required = false) String subCategory) throws java.io.IOException {
 
         GalleryItem item = new GalleryItem();
-        item.setCaption(caption);
+        item.setCaption(caption != null ? caption : "");
         item.setCategory(category);
         item.setSubCategory(subCategory != null ? subCategory : "General");
 

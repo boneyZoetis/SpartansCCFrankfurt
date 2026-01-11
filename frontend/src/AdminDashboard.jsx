@@ -7,6 +7,7 @@ function AdminDashboard() {
     const [matches, setMatches] = useState([]);
     const [players, setPlayers] = useState([]);
     const [playerSearchQuery, setPlayerSearchQuery] = useState('');
+    const [gallerySearchQuery, setGallerySearchQuery] = useState('');
 
     // Modal State
     const [showMatchModal, setShowMatchModal] = useState(false);
@@ -503,6 +504,24 @@ function AdminDashboard() {
                         </div>
                     )}
 
+                    {activeTab === 'gallery' && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <input
+                                type="text"
+                                placeholder="Search gallery by Category or SubCategory..."
+                                value={gallerySearchQuery}
+                                onChange={(e) => setGallerySearchQuery(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid #d1d5db',
+                                    fontSize: '0.9rem'
+                                }}
+                            />
+                        </div>
+                    )}
+
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
@@ -627,19 +646,24 @@ function AdminDashboard() {
                                     </tr>
                                 ))
                             ) : activeTab === 'gallery' ? (
-                                galleryItems.map(item => (
-                                    <tr key={item.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                        <td style={{ padding: '1rem', width: '120px' }}>
-                                            <img src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : API_URL + item.imageUrl) : ''} alt={item.caption} style={{ width: '100px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
-                                        </td>
-                                        <td style={{ padding: '1rem', fontWeight: '500' }}>{item.category}</td>
-                                        <td style={{ padding: '1rem' }}>{item.subCategory || '-'}</td>
-                                        <td style={{ padding: '1rem' }}>{item.caption}</td>
-                                        <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                            <button onClick={() => deleteGalleryItem(item.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
-                                        </td>
-                                    </tr>
-                                ))
+                                galleryItems
+                                    .filter(item =>
+                                        (item.category && item.category.toLowerCase().includes(gallerySearchQuery.toLowerCase())) ||
+                                        (item.subCategory && item.subCategory.toLowerCase().includes(gallerySearchQuery.toLowerCase()))
+                                    )
+                                    .map(item => (
+                                        <tr key={item.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                            <td style={{ padding: '1rem', width: '120px' }}>
+                                                <img src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : API_URL + item.imageUrl) : ''} alt={item.caption} style={{ width: '100px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
+                                            </td>
+                                            <td style={{ padding: '1rem', fontWeight: '500' }}>{item.category}</td>
+                                            <td style={{ padding: '1rem' }}>{item.subCategory || '-'}</td>
+                                            <td style={{ padding: '1rem' }}>{item.caption}</td>
+                                            <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                                <button onClick={() => deleteGalleryItem(item.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
+                                            </td>
+                                        </tr>
+                                    ))
                             ) : (
                                 <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
                                     <td style={{ padding: '1rem', fontWeight: '500' }}>{stats.matchesWon}</td>
@@ -930,7 +954,7 @@ function AdminDashboard() {
                                     onChange={e => setSelectedFile(e.target.files[0])}
                                     style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                                 />
-                                <input type="text" placeholder="Caption" required
+                                <input type="text" placeholder="Caption (Optional)"
                                     value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })}
                                     style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                                 />
