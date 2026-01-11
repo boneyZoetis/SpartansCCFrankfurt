@@ -10,7 +10,7 @@ export default function PlayerSection() {
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
-                    setPlayers(data);
+                    setPlayers(data.filter(p => p.approved));
                 } else {
                     console.error("API returned non-array:", data);
                     setPlayers([]);

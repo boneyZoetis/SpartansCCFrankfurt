@@ -24,12 +24,13 @@ public class Player {
     @jakarta.persistence.Column(length = 1000000) // Increase limit for large images
     private byte[] imageData;
     private String imageContentType;
+    private boolean approved = false;
 
     public Player() {
     }
 
     public Player(Long id, String name, String role, String battingStyle, String bowlingStyle,
-            int matches, int runs, int wickets, String imageUrl) {
+            int matches, int runs, int wickets, String imageUrl, boolean approved) {
         this.id = id;
         this.name = name;
         this.role = role;
@@ -39,6 +40,7 @@ public class Player {
         this.runs = runs;
         this.wickets = wickets;
         this.imageUrl = imageUrl;
+        this.approved = approved;
     }
 
     public Long getId() {
@@ -127,5 +129,13 @@ public class Player {
 
     public void setImageContentType(String imageContentType) {
         this.imageContentType = imageContentType;
+    }
+
+    public boolean isApproved() {
+        return approved;
+    }
+
+    public void setApproved(boolean approved) {
+        this.approved = approved;
     }
 }

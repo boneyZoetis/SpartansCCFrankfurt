@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { ChevronLeft, ChevronRight, Camera, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Camera, X, Play } from 'lucide-react';
 
 export default function MediaSection() {
     const [lightbox, setLightbox] = useState({ isOpen: false, index: 0, images: [] });
-    // This state controls the "folder" view modal
-    const [activeCategory, setActiveCategory] = useState(null); // Stores the selected Category object (title, subCategories: { name: [images] })
+    // This state controls the "album" view modal
+    const [activeAlbum, setActiveAlbum] = useState(null);
     const [mediaGroups, setMediaGroups] = useState([]); // List of main Categories
 
     useEffect(() => {
@@ -81,112 +81,190 @@ export default function MediaSection() {
     }, [lightbox.isOpen]);
 
     return (
-        <section style={{ padding: '6rem 0', backgroundColor: '#111827', color: 'white' }}>
+        <section style={{ padding: '6rem 0', backgroundColor: '#0f172a', color: 'white', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
             <div className="container">
-                <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
-                    <h3 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                        Media Gallery <Camera size={40} color="var(--secondary-color)" />
+                {/* Hero / Intro */}
+                <div style={{ marginBottom: '5rem', textAlign: 'center' }}>
+                    <h3 style={{
+                        fontSize: '3.5rem',
+                        fontWeight: '900',
+                        marginBottom: '1.5rem',
+                        background: 'linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '1.5rem'
+                    }}>
+                        Media Gallery <Camera size={48} color="var(--secondary-color)" style={{ filter: 'drop-shadow(0 0 15px rgba(255,165,0,0.4))' }} />
                     </h3>
-                    <p style={{ color: '#9ca3af', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>
-                        Relive the best moments from our training camps, championship matches, and community events.
+                    <p style={{ color: '#94a3b8', fontSize: '1.25rem', maxWidth: '650px', margin: '0 auto', lineHeight: '1.7' }}>
+                        Capturing the spirit of Spartans. Relive our journey through every boundary, wicket, and celebration.
                     </p>
                 </div>
 
-                {/* Main Category Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
-                    {mediaGroups.map((group, index) => (
-                        <div
-                            key={index}
-                            onClick={() => setActiveCategory(group)}
-                            style={{
-                                backgroundColor: '#1f2937',
-                                borderRadius: '16px',
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)'
-                            }}
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-8px)';
-                                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.5)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.5)';
-                            }}
-                        >
-                            <div style={{ height: '200px', overflow: 'hidden' }}>
-                                <img
-                                    src={group.coverImage}
-                                    alt={group.title}
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
-                            </div>
-                            <div style={{ padding: '1.5rem' }}>
-                                <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'white', marginBottom: '0.5rem' }}>
+                {/* Categories List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6rem' }}>
+                    {mediaGroups.map((group, groupIdx) => (
+                        <div key={groupIdx}>
+                            {/* Category Title with Accent */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '1rem',
+                                marginBottom: '2.5rem',
+                                paddingBottom: '1rem',
+                                borderBottom: '1px solid #334155'
+                            }}>
+                                <div style={{ width: '6px', height: '40px', backgroundColor: 'var(--secondary-color)', borderRadius: '4px', boxShadow: '0 0 10px var(--secondary-color)' }}></div>
+                                <h3 style={{
+                                    fontSize: '2.25rem',
+                                    fontWeight: '700',
+                                    color: 'white',
+                                    margin: 0,
+                                    letterSpacing: '-0.5px'
+                                }}>
                                     {group.title}
-                                </h4>
-                                <span style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-                                    {group.subSessions.length} Albums
-                                </span>
+                                </h3>
+                            </div>
+
+                            {/* Albums Grid */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2.5rem' }}>
+                                {group.subSessions.map((album, albumIdx) => (
+                                    <div
+                                        key={albumIdx}
+                                        onClick={() => setActiveAlbum(album)}
+                                        style={{
+                                            backgroundColor: '#1e293b',
+                                            borderRadius: '20px',
+                                            overflow: 'hidden',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+                                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            position: 'relative',
+                                            border: '1px solid #334155'
+                                        }}
+                                        onMouseOver={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-10px)';
+                                            e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.4)';
+                                            e.currentTarget.style.borderColor = 'var(--secondary-color)';
+                                        }}
+                                        onMouseOut={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.3)';
+                                            e.currentTarget.style.borderColor = '#334155';
+                                        }}
+                                    >
+                                        {/* Image Container */}
+                                        <div style={{ height: '220px', overflow: 'hidden', position: 'relative' }}>
+                                            <img
+                                                src={album.images[0]?.url}
+                                                alt={album.title}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
+                                            <div style={{
+                                                position: 'absolute', inset: 0,
+                                                background: 'linear-gradient(to top, rgba(15,23,42,0.8), transparent)',
+                                                opacity: 0.8
+                                            }}></div>
+
+                                            {/* Photo Count Badge */}
+                                            <div style={{
+                                                position: 'absolute', top: '15px', right: '15px',
+                                                backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+                                                padding: '6px 12px', borderRadius: '20px',
+                                                display: 'flex', alignItems: 'center', gap: '6px',
+                                                fontSize: '0.85rem', fontWeight: '600', color: 'white',
+                                                border: '1px solid rgba(255,255,255,0.1)'
+                                            }}>
+                                                <Camera size={14} color="var(--secondary-color)" /> {album.images.length}
+                                            </div>
+                                        </div>
+
+                                        {/* Content */}
+                                        <div style={{ padding: '1.5rem', position: 'relative' }}>
+                                            <h4 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'white', marginBottom: '0.5rem', letterSpacing: '0.5px' }}>
+                                                {album.title}
+                                            </h4>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#94a3b8', fontSize: '0.9rem', fontWeight: '500' }}>
+                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--secondary-color)', boxShadow: '0 0 5px var(--secondary-color)' }}></div>
+                                                View Album
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Sub-Category / Album Modal */}
-            {activeCategory && (
+            {/* Album Detail Modal */}
+            {activeAlbum && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.98)',
                     zIndex: 900,
                     padding: '2rem',
                     overflowY: 'auto'
                 }}>
-                    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>{activeCategory.title}</h2>
+                    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', borderBottom: '1px solid #334155', paddingBottom: '1rem' }}>
+                            <div>
+                                <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'white', marginBottom: '0.5rem' }}>{activeAlbum.title}</h2>
+                                <p style={{ color: '#94a3b8' }}>{activeAlbum.images.length} Photos</p>
+                            </div>
                             <button
-                                onClick={() => setActiveCategory(null)}
-                                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', color: 'white', padding: '10px', cursor: 'pointer' }}
+                                onClick={() => setActiveAlbum(null)}
+                                style={{ background: '#334155', border: 'none', borderRadius: '50%', color: 'white', padding: '12px', cursor: 'pointer', transition: 'background 0.2s' }}
+                                onMouseOver={(e) => e.target.style.background = '#475569'}
+                                onMouseOut={(e) => e.target.style.background = '#334155'}
                             >
-                                <X size={24} />
+                                <X size={28} />
                             </button>
                         </div>
 
-                        {/* Iterate over SubCategories */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                            {activeCategory.subSessions.map((sub, subIdx) => (
-                                <div key={subIdx}>
-                                    <h3 style={{
-                                        fontSize: '1.5rem', fontWeight: '600', color: 'var(--secondary-color)', marginBottom: '1rem',
-                                        borderBottom: '1px solid #374151', paddingBottom: '0.5rem'
-                                    }}>
-                                        {sub.title}
-                                    </h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                                        {sub.images.map((img, imgIdx) => (
-                                            <div
-                                                key={imgIdx}
-                                                onClick={() => openLightbox(sub.images, imgIdx)} // Pass the specific sub-category images to lightbox
-                                                style={{
-                                                    height: '180px',
-                                                    borderRadius: '8px',
-                                                    overflow: 'hidden',
-                                                    cursor: 'pointer',
-                                                    position: 'relative'
-                                                }}
-                                            >
-                                                <img
-                                                    src={img.url}
-                                                    alt={img.caption}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
-                                                    onMouseOver={e => e.target.style.transform = 'scale(1.1)'}
-                                                    onMouseOut={e => e.target.style.transform = 'scale(1.0)'}
-                                                />
-                                            </div>
-                                        ))}
+                        {/* Grid of Images in Album */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                            {activeAlbum.images.map((img, idx) => (
+                                <div
+                                    key={idx}
+                                    onClick={() => openLightbox(activeAlbum.images, idx)}
+                                    style={{
+                                        height: '250px',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        position: 'relative',
+                                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.transform = 'scale(1.02)';
+                                        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.3)';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1)';
+                                    }}
+                                >
+                                    <img
+                                        src={img.url}
+                                        alt={img.caption}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
+                                    />
+                                    {/* Hover info overlay */}
+                                    <div style={{
+                                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                                        background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
+                                        padding: '1.5rem 1rem 1rem',
+                                        opacity: 0,
+                                        transition: 'opacity 0.3s'
+                                    }}
+                                        onMouseOver={(e) => e.currentTarget.style.opacity = 1}
+                                        onMouseOut={(e) => e.currentTarget.style.opacity = 0}
+                                    >
+                                        <p style={{ color: 'white', fontSize: '0.9rem', margin: 0 }}>{img.caption}</p>
                                     </div>
                                 </div>
                             ))}
@@ -202,7 +280,7 @@ export default function MediaSection() {
                     style={{
                         position: 'fixed',
                         top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.98)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.99)',
                         zIndex: 1000,
                         display: 'flex',
                         alignItems: 'center',
@@ -211,37 +289,45 @@ export default function MediaSection() {
                 >
                     <button
                         onClick={closeLightbox}
-                        style={{ position: 'absolute', top: '20px', right: '20px', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '10px' }}
+                        style={{ position: 'absolute', top: '30px', right: '30px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', color: 'white', cursor: 'pointer', padding: '12px' }}
                     >
                         <X size={32} />
                     </button>
 
                     <button
                         onClick={prevImage}
-                        style={{ position: 'absolute', left: '20px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', color: 'white', cursor: 'pointer', padding: '15px' }}
+                        style={{ position: 'absolute', left: '30px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', color: 'white', cursor: 'pointer', padding: '16px', backdropFilter: 'blur(5px)' }}
                     >
-                        <ChevronLeft size={32} />
+                        <ChevronLeft size={36} />
                     </button>
 
-                    <div onClick={(e) => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div onClick={(e) => e.stopPropagation()} style={{ maxWidth: '95vw', maxHeight: '95vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <img
                             src={lightbox.images[lightbox.index].url}
                             alt={lightbox.images[lightbox.index].caption}
-                            style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '85vh',
+                                borderRadius: '8px',
+                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                                border: '1px solid #334155'
+                            }}
                         />
-                        <h3 style={{ marginTop: '1.5rem', color: 'white', fontSize: '1.5rem', fontWeight: '600', textAlign: 'center' }}>
-                            {lightbox.images[lightbox.index].caption}
-                        </h3>
-                        <div style={{ color: '#9ca3af', marginTop: '0.5rem' }}>
+                        {lightbox.images[lightbox.index].caption && (
+                            <h3 style={{ marginTop: '1.5rem', color: 'white', fontSize: '1.25rem', fontWeight: '500', textAlign: 'center', maxWidth: '800px' }}>
+                                {lightbox.images[lightbox.index].caption}
+                            </h3>
+                        )}
+                        <div style={{ color: '#94a3b8', marginTop: '0.5rem', fontSize: '0.9rem' }}>
                             {lightbox.index + 1} / {lightbox.images.length}
                         </div>
                     </div>
 
                     <button
                         onClick={nextImage}
-                        style={{ position: 'absolute', right: '20px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', color: 'white', cursor: 'pointer', padding: '15px' }}
+                        style={{ position: 'absolute', right: '30px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', color: 'white', cursor: 'pointer', padding: '16px', backdropFilter: 'blur(5px)' }}
                     >
-                        <ChevronRight size={32} />
+                        <ChevronRight size={36} />
                     </button>
                 </div>
             )}

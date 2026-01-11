@@ -6,7 +6,7 @@ function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('matches'); // 'matches' or 'players'
     const [matches, setMatches] = useState([]);
     const [players, setPlayers] = useState([]);
-    const [playerSearchQuery, setPlayerSearchQuery] = useState('');
+    const [playerSearchQuery, setPlayerSearchQuery] = useState({ text: '', filter: 'active' });
     const [gallerySearchQuery, setGallerySearchQuery] = useState('');
 
     // Modal State
@@ -491,8 +491,8 @@ function AdminDashboard() {
                             <input
                                 type="text"
                                 placeholder="Search players by name..."
-                                value={playerSearchQuery}
-                                onChange={(e) => setPlayerSearchQuery(e.target.value)}
+                                value={playerSearchQuery.text}
+                                onChange={(e) => setPlayerSearchQuery(prev => ({ ...prev, text: e.target.value }))}
                                 style={{
                                     width: '100%',
                                     padding: '0.8rem',
@@ -611,29 +611,86 @@ function AdminDashboard() {
                                     </tr>
                                 ))
                             ) : activeTab === 'players' ? (
-                                players
-                                    .filter(player => player.name.toLowerCase().includes(playerSearchQuery.toLowerCase()))
-                                    .map(player => (
-                                        <tr key={player.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                            <td style={{ padding: '1rem', fontWeight: '500' }}>{player.name}</td>
-                                            <td style={{ padding: '1rem' }}>{player.role}</td>
-                                            <td style={{ padding: '1rem' }}>{player.battingStyle}</td>
-                                            <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                                <button
-                                                    onClick={() => {
-                                                        setPlayerForm(player);
-                                                        setSelectedPlayerFile(null);
-                                                        setEditingPlayerId(player.id);
-                                                        setShowPlayerModal(true);
-                                                    }}
-                                                    style={{ padding: '0.4rem 0.8rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button onClick={() => deletePlayer(player.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
-                                            </td>
-                                        </tr>
-                                    ))
+                                <>
+                                    {/* Sub-tabs for Active vs Pending */}
+                                    <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
+                                        <button
+                                            onClick={() => setPlayerSearchQuery(prev => ({ ...prev, filter: 'active' }))}
+                                            style={{
+                                                fontWeight: !playerSearchQuery.filter || playerSearchQuery.filter === 'active' ? 'bold' : 'normal',
+                                                color: !playerSearchQuery.filter || playerSearchQuery.filter === 'active' ? '#7c3aed' : '#6b7280',
+                                                border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem'
+                                            }}
+                                        >
+                                            Active Players
+                                        </button>
+                                        <button
+                                            onClick={() => setPlayerSearchQuery(prev => ({ ...prev, filter: 'pending' }))}
+                                            style={{
+                                                fontWeight: playerSearchQuery.filter === 'pending' ? 'bold' : 'normal',
+                                                color: playerSearchQuery.filter === 'pending' ? '#eab308' : '#6b7280',
+                                                border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem',
+                                                display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                            }}
+                                        >
+                                            Pending Approvals
+                                            {players.filter(p => !p.approved).length > 0 && (
+                                                <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '99px' }}>
+                                                    {players.filter(p => !p.approved).length}
+                                                </span>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {players
+                                        .filter(player => {
+                                            const matchesSearch = player.name.toLowerCase().includes((playerSearchQuery.text || '').toLowerCase());
+                                            const isPending = !player.approved; // Assumes backend sends 'approved' field
+                                            const showPending = playerSearchQuery.filter === 'pending';
+
+                                            if (showPending) return isPending && matchesSearch;
+                                            return !isPending && matchesSearch; // Default show active
+                                        })
+                                        .map(player => (
+                                            <tr key={player.id} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: !player.approved ? '#fffbeb' : 'white' }}>
+                                                <td style={{ padding: '1rem', fontWeight: '500' }}>{player.name}</td>
+                                                <td style={{ padding: '1rem' }}>{player.role}</td>
+                                                <td style={{ padding: '1rem' }}>{player.battingStyle}</td>
+                                                <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                                    {!player.approved && (
+                                                        <button
+                                                            onClick={async () => {
+                                                                if (window.confirm(`Approve ${player.name} to join the squad?`)) {
+                                                                    try {
+                                                                        const res = await fetch(`${API_URL}/api/players/${player.id}/approve`, { method: 'PUT' });
+                                                                        if (res.ok) {
+                                                                            alert('Player Approved!');
+                                                                            fetchData();
+                                                                        } else alert('Approval failed');
+                                                                    } catch (e) { console.error(e); alert('Error'); }
+                                                                }
+                                                            }}
+                                                            style={{ padding: '0.4rem 0.8rem', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => {
+                                                            setPlayerForm(player);
+                                                            setSelectedPlayerFile(null);
+                                                            setEditingPlayerId(player.id);
+                                                            setShowPlayerModal(true);
+                                                        }}
+                                                        style={{ padding: '0.4rem 0.8rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button onClick={() => deletePlayer(player.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                </>
                             ) : activeTab === 'achievements' ? (
                                 achievements.map(ach => (
                                     <tr key={ach.id} style={{ borderBottom: '1px solid #f3f4f6' }}>

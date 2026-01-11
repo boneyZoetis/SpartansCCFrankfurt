@@ -59,6 +59,9 @@ public class PlayerController {
             player.setImageContentType(image.getContentType());
         }
 
+        // Default approved to false for new registrations
+        player.setApproved(false);
+
         Player savedPlayer = playerRepository.save(player);
         if (savedPlayer.getImageData() != null) {
             savedPlayer.setImageUrl("/api/players/" + savedPlayer.getId() + "/image");
@@ -66,6 +69,13 @@ public class PlayerController {
         }
 
         return savedPlayer;
+    }
+
+    @PutMapping("/{id}/approve")
+    public Player approvePlayer(@PathVariable Long id) {
+        Player player = playerRepository.findById(id).orElseThrow();
+        player.setApproved(true);
+        return playerRepository.save(player);
     }
 
     @PutMapping("/{id}")
