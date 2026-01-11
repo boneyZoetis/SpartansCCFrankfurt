@@ -39,11 +39,13 @@ public class GalleryController {
     public GalleryItem createGalleryItem(
             @RequestParam("image") MultipartFile image,
             @RequestParam("caption") String caption,
-            @RequestParam("category") String category) throws java.io.IOException {
+            @RequestParam("category") String category,
+            @RequestParam(value = "subCategory", required = false) String subCategory) throws java.io.IOException {
 
         GalleryItem item = new GalleryItem();
         item.setCaption(caption);
         item.setCategory(category);
+        item.setSubCategory(subCategory != null ? subCategory : "General");
 
         if (image != null && !image.isEmpty()) {
             item.setImageData(image.getBytes());

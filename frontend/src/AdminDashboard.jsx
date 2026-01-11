@@ -33,6 +33,7 @@ function AdminDashboard() {
     const [showGalleryModal, setShowGalleryModal] = useState(false);
     const [galleryForm, setGalleryForm] = useState({
         category: '',
+        subCategory: '',
         caption: ''
     });
     const [selectedFile, setSelectedFile] = useState(null);
@@ -295,6 +296,9 @@ function AdminDashboard() {
         formData.append('image', selectedFile);
         formData.append('caption', galleryForm.caption);
         formData.append('category', categoryToUse);
+        if (galleryForm.subCategory) {
+            formData.append('subCategory', galleryForm.subCategory);
+        }
 
         try {
             const res = await fetch(API_URL + '/api/gallery', {
@@ -304,7 +308,7 @@ function AdminDashboard() {
             });
             if (res.ok) {
                 setShowGalleryModal(false);
-                setGalleryForm({ category: '', caption: '' });
+                setGalleryForm({ category: '', subCategory: '', caption: '' });
                 setSelectedFile(null);
                 setNewCategory('');
                 setIsNewCategory(false);
@@ -528,6 +532,7 @@ function AdminDashboard() {
                                     <>
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Image</th>
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Category</th>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Sub Category</th>
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Caption</th>
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
                                     </>
@@ -628,6 +633,7 @@ function AdminDashboard() {
                                             <img src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : API_URL + item.imageUrl) : ''} alt={item.caption} style={{ width: '100px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
                                         </td>
                                         <td style={{ padding: '1rem', fontWeight: '500' }}>{item.category}</td>
+                                        <td style={{ padding: '1rem' }}>{item.subCategory || '-'}</td>
                                         <td style={{ padding: '1rem' }}>{item.caption}</td>
                                         <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
                                             <button onClick={() => deleteGalleryItem(item.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
@@ -907,6 +913,17 @@ function AdminDashboard() {
                                             </button>
                                         </div>
                                     )}
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#4b5563' }}>Sub Category</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter sub category (e.g. 2023, Finals)"
+                                        value={galleryForm.subCategory || ''}
+                                        onChange={(e) => setGalleryForm({ ...galleryForm, subCategory: e.target.value })}
+                                        style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                    />
                                 </div>
 
                                 <input type="file" accept="image/*" required

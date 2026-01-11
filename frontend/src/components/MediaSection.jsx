@@ -5,37 +5,53 @@ import { ChevronLeft, ChevronRight, Camera, X } from 'lucide-react';
 export default function MediaSection() {
     const [lightbox, setLightbox] = useState({ isOpen: false, index: 0, images: [] });
     // This state controls the "folder" view modal
-    const [activeCategory, setActiveCategory] = useState(null);
-    const [mediaSessions, setMediaSessions] = useState([]);
+    const [activeCategory, setActiveCategory] = useState(null); // Stores the selected Category object (title, subCategories: { name: [images] })
+    const [mediaGroups, setMediaGroups] = useState([]); // List of main Categories
 
     useEffect(() => {
         fetch(API_URL + '/api/gallery')
             .then(res => res.json())
             .then(data => {
-                // Group by category
-                const groups = data.reduce((acc, item) => {
-                    if (!acc[item.category]) {
-                        acc[item.category] = [];
-                    }
+                // 1. Group by Category
+                const groups = {};
+                data.forEach(item => {
+                    const cat = item.category || 'General';
+                    const sub = item.subCategory || 'General';
                     const imageUrl = item.imageUrl.startsWith('http') ? item.imageUrl : API_URL + item.imageUrl;
-                    acc[item.category].push({ url: imageUrl, caption: item.caption });
-                    return acc;
-                }, {});
 
-                const sessions = Object.keys(groups).map(category => ({
-                    title: category,
-                    images: groups[category],
-                    // Use the first image as the cover
-                    coverImage: groups[category][0]?.url
+                    if (!groups[cat]) {
+                        groups[cat] = {
+                            title: cat,
+                            subCategories: {},
+                            coverImage: imageUrl // Default cover
+                        };
+                    }
+
+                    if (!groups[cat].subCategories[sub]) {
+                        groups[cat].subCategories[sub] = [];
+                    }
+
+                    groups[cat].subCategories[sub].push({ url: imageUrl, caption: item.caption });
+                });
+
+                // Convert to array
+                const sessions = Object.values(groups).map(g => ({
+                    ...g,
+                    // Convert subCategories object to array for easier rendering
+                    subSessions: Object.keys(g.subCategories).map(subKey => ({
+                        title: subKey,
+                        images: g.subCategories[subKey]
+                    }))
                 }));
-                setMediaSessions(sessions);
+
+                setMediaGroups(sessions);
             })
             .catch(err => console.error("Error fetching gallery:", err));
     }, []);
 
     // Open Lightbox
-    const openLightbox = (index) => {
-        setLightbox({ isOpen: true, index, images: activeCategory.images });
+    const openLightbox = (images, index) => {
+        setLightbox({ isOpen: true, index, images });
     };
 
     const closeLightbox = () => {
@@ -76,12 +92,12 @@ export default function MediaSection() {
                     </p>
                 </div>
 
-                {/* Category Grid (Albums) */}
+                {/* Main Category Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
-                    {mediaSessions.map((session, index) => (
+                    {mediaGroups.map((group, index) => (
                         <div
                             key={index}
-                            onClick={() => setActiveCategory(session)}
+                            onClick={() => setActiveCategory(group)}
                             style={{
                                 backgroundColor: '#1f2937',
                                 borderRadius: '16px',
@@ -101,17 +117,17 @@ export default function MediaSection() {
                         >
                             <div style={{ height: '200px', overflow: 'hidden' }}>
                                 <img
-                                    src={session.coverImage}
-                                    alt={session.title}
+                                    src={group.coverImage}
+                                    alt={group.title}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />
                             </div>
                             <div style={{ padding: '1.5rem' }}>
                                 <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'white', marginBottom: '0.5rem' }}>
-                                    {session.title}
+                                    {group.title}
                                 </h4>
                                 <span style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-                                    {session.images.length} Photos
+                                    {group.subSessions.length} Albums
                                 </span>
                             </div>
                         </div>
@@ -119,7 +135,7 @@ export default function MediaSection() {
                 </div>
             </div>
 
-            {/* Category/Album Modal */}
+            {/* Sub-Category / Album Modal */}
             {activeCategory && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -139,33 +155,38 @@ export default function MediaSection() {
                             </button>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
-                            {activeCategory.images.map((img, idx) => (
-                                <div
-                                    key={idx}
-                                    onClick={() => openLightbox(idx)}
-                                    style={{
-                                        height: '200px',
-                                        borderRadius: '8px',
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
-                                        position: 'relative'
-                                    }}
-                                >
-                                    <img
-                                        src={img.url}
-                                        alt={img.caption}
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
-                                        onMouseOver={e => e.target.style.transform = 'scale(1.1)'}
-                                        onMouseOut={e => e.target.style.transform = 'scale(1.0)'}
-                                    />
-                                    <div style={{
-                                        position: 'absolute', bottom: 0, left: 0, right: 0,
-                                        background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
-                                        padding: '1rem 0.5rem',
-                                        fontSize: '0.9rem'
+                        {/* Iterate over SubCategories */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                            {activeCategory.subSessions.map((sub, subIdx) => (
+                                <div key={subIdx}>
+                                    <h3 style={{
+                                        fontSize: '1.5rem', fontWeight: '600', color: 'var(--secondary-color)', marginBottom: '1rem',
+                                        borderBottom: '1px solid #374151', paddingBottom: '0.5rem'
                                     }}>
-                                        {img.caption}
+                                        {sub.title}
+                                    </h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                                        {sub.images.map((img, imgIdx) => (
+                                            <div
+                                                key={imgIdx}
+                                                onClick={() => openLightbox(sub.images, imgIdx)} // Pass the specific sub-category images to lightbox
+                                                style={{
+                                                    height: '180px',
+                                                    borderRadius: '8px',
+                                                    overflow: 'hidden',
+                                                    cursor: 'pointer',
+                                                    position: 'relative'
+                                                }}
+                                            >
+                                                <img
+                                                    src={img.url}
+                                                    alt={img.caption}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
+                                                    onMouseOver={e => e.target.style.transform = 'scale(1.1)'}
+                                                    onMouseOut={e => e.target.style.transform = 'scale(1.0)'}
+                                                />
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}

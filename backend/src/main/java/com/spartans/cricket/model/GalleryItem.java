@@ -11,6 +11,7 @@ public class GalleryItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String category;
+    private String subCategory;
     private String imageUrl;
 
     @jakarta.persistence.Lob
@@ -43,6 +44,14 @@ public class GalleryItem {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getSubCategory() {
+        return subCategory;
+    }
+
+    public void setSubCategory(String subCategory) {
+        this.subCategory = subCategory;
     }
 
     public String getImageUrl() {
