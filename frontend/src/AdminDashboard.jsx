@@ -81,25 +81,27 @@ function AdminDashboard() {
 
     const navigate = useNavigate();
 
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
         const isAuthenticated = localStorage.getItem('isAuthenticated');
         if (!isAuthenticated) {
             navigate('/login');
+        } else {
+            fetchData();
         }
-        fetchData();
     }, [navigate]);
 
     const fetchData = async () => {
         try {
+            setLoading(true);
             const matchesRes = await fetch(API_URL + '/api/matches');
             const matchesData = await matchesRes.json();
-            // Sort matches: Newest first (Descending order of date)
-            matchesData.sort((a, b) => new Date(b.matchDate) - new Date(a.matchDate));
-            setMatches(matchesData);
+            if (Array.isArray(matchesData)) setMatches(matchesData.sort((a, b) => new Date(b.matchDate) - new Date(a.matchDate)));
 
             const playersRes = await fetch(API_URL + '/api/players');
             const playersData = await playersRes.json();
-            setPlayers(playersData);
+            if (Array.isArray(playersData)) setPlayers(playersData);
 
             const statsRes = await fetch(API_URL + '/api/stats');
             if (statsRes.ok) {
@@ -115,29 +117,34 @@ function AdminDashboard() {
 
             const achievementsRes = await fetch(API_URL + '/api/achievements');
             const achievementsData = await achievementsRes.json();
-            setAchievements(achievementsData);
+            if (Array.isArray(achievementsData)) setAchievements(achievementsData);
 
             // Fetch Gallery Items
             const galleryRes = await fetch(API_URL + '/api/gallery');
             const galleryData = await galleryRes.json();
-            setGalleryItems(galleryData);
-
-            // Extract unique categories
-            const categories = [...new Set(galleryData.map(item => item.category))];
-            setExistingCategories(categories);
+            if (Array.isArray(galleryData)) {
+                setGalleryItems(galleryData);
+                const categories = [...new Set(galleryData.map(item => item.category))];
+                setExistingCategories(categories);
+            }
 
             // Fetch Join Requests
             const joinRes = await fetch(API_URL + '/api/join');
-            const joinData = await joinRes.json();
-            setJoinRequests(joinData);
+            if (joinRes.ok) {
+                const joinData = await joinRes.json();
+                if (Array.isArray(joinData)) setJoinRequests(joinData);
+            }
 
         } catch (error) {
             console.error('Error fetching data:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleStatsSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true); // Start loading
         console.log("Submitting stats:", statsForm); // DEBUG
         try {
             const res = await fetch(API_URL + '/api/stats', {
@@ -340,7 +347,7 @@ function AdminDashboard() {
     };
 
     const processJoinRequest = async (id) => {
-        if (window.confirm('Mark this request as PROCESSED?')) {
+        if (window.confirm('CONFIRM DATA PROCESSING:\n\nI confirm that I have processed this request in accordance with the German Data Protection Regulation (DSGVO).\n\nClick OK to mark as PROCESSED.')) {
             try {
                 const res = await fetch(`${API_URL}/api/join/${id}/process`, { method: 'PUT' });
                 if (res.ok) fetchData();
@@ -350,6 +357,14 @@ function AdminDashboard() {
             }
         }
     };
+
+    if (loading) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb', color: '#6b7280', fontSize: '1.2rem', fontWeight: '500' }}>
+                Loading Dashboard...
+            </div>
+        );
+    }
 
     return (
         <div style={{ fontFamily: '"Inter", sans-serif', backgroundColor: '#f9fafb', minHeight: '100vh' }}>
