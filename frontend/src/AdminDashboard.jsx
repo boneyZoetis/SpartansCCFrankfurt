@@ -630,6 +630,7 @@ function AdminDashboard() {
                 ))}
                     </div>
                 )}
+    }
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
