@@ -42,6 +42,10 @@ function AdminDashboard() {
     const [isNewCategory, setIsNewCategory] = useState(false);
     const [existingCategories, setExistingCategories] = useState([]);
 
+    // Join Requests State
+    const [joinRequests, setJoinRequests] = useState([]);
+    const [joinRequestFilter, setJoinRequestFilter] = useState('NEW');
+
     const [achievementForm, setAchievementForm] = useState({
         title: '',
         achievementYear: '',
@@ -121,6 +125,11 @@ function AdminDashboard() {
             // Extract unique categories
             const categories = [...new Set(galleryData.map(item => item.category))];
             setExistingCategories(categories);
+
+            // Fetch Join Requests
+            const joinRes = await fetch(API_URL + '/api/join');
+            const joinData = await joinRes.json();
+            setJoinRequests(joinData);
 
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -330,6 +339,18 @@ function AdminDashboard() {
         }
     };
 
+    const processJoinRequest = async (id) => {
+        if (window.confirm('Mark this request as PROCESSED?')) {
+            try {
+                const res = await fetch(`${API_URL}/api/join/${id}/process`, { method: 'PUT' });
+                if (res.ok) fetchData();
+            } catch (e) {
+                console.error(e);
+                alert('Error processing request');
+            }
+        }
+    };
+
     return (
         <div style={{ fontFamily: '"Inter", sans-serif', backgroundColor: '#f9fafb', minHeight: '100vh' }}>
             {/* Top Header */}
@@ -442,6 +463,26 @@ function AdminDashboard() {
                     >
                         Gallery
                     </button>
+                    <button
+                        onClick={() => setActiveTab('join')}
+                        style={{
+                            padding: '0.75rem 2rem',
+                            backgroundColor: activeTab === 'join' ? '#7c3aed' : 'white',
+                            color: activeTab === 'join' ? 'white' : '#374151',
+                            border: activeTab === 'join' ? 'none' : '1px solid #d1d5db',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        }}
+                    >
+                        Join Requests
+                        {joinRequests.filter(r => r.status === 'NEW').length > 0 && (
+                            <span style={{ marginLeft: '8px', backgroundColor: '#ef4444', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem' }}>
+                                {joinRequests.filter(r => r.status === 'NEW').length}
+                            </span>
+                        )}
+                    </button>
                 </div>
 
                 {/* Content Area */}
@@ -451,7 +492,9 @@ function AdminDashboard() {
                             {activeTab === 'matches' ? 'Manage Matches' :
                                 activeTab === 'players' ? 'Manage Players' :
                                     activeTab === 'achievements' ? 'Manage Achievements' :
-                                        activeTab === 'gallery' ? 'Manage Gallery' : 'Manage Club Stats'}
+                                        activeTab === 'achievements' ? 'Manage Achievements' :
+                                            activeTab === 'gallery' ? 'Manage Gallery' :
+                                                activeTab === 'join' ? 'Join Requests' : 'Manage Club Stats'}
                         </h2>
                         {activeTab !== 'stats' && (
                             <button
@@ -522,6 +565,14 @@ function AdminDashboard() {
                         </div>
                     )}
 
+                    {activeTab === 'join' && (
+                        <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
+                            <button onClick={() => setJoinRequestFilter('NEW')} style={{ fontWeight: joinRequestFilter === 'NEW' ? 'bold' : 'normal', color: joinRequestFilter === 'NEW' ? '#7c3aed' : '#6b7280', border: 'none', background: 'none', cursor: 'pointer' }}>New</button>
+                            <button onClick={() => setJoinRequestFilter('PROCESSED')} style={{ fontWeight: joinRequestFilter === 'PROCESSED' ? 'bold' : 'normal', color: joinRequestFilter === 'PROCESSED' ? '#7c3aed' : '#6b7280', border: 'none', background: 'none', cursor: 'pointer' }}>Processed</button>
+                            <button onClick={() => setJoinRequestFilter('ALL')} style={{ fontWeight: joinRequestFilter === 'ALL' ? 'bold' : 'normal', color: joinRequestFilter === 'ALL' ? '#7c3aed' : '#6b7280', border: 'none', background: 'none', cursor: 'pointer' }}>All</button>
+                        </div>
+                    )}
+
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
@@ -554,6 +605,15 @@ function AdminDashboard() {
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Sub Category</th>
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Caption</th>
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
+                                    </>
+                                ) : activeTab === 'join' ? (
+                                    <>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Date</th>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Name</th>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Role</th>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Email/Phone</th>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Status</th>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Action</th>
                                     </>
                                 ) : (
                                     <>
@@ -718,6 +778,45 @@ function AdminDashboard() {
                                             <td style={{ padding: '1rem' }}>{item.caption}</td>
                                             <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
                                                 <button onClick={() => deleteGalleryItem(item.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
+                                            </td>
+                                        </tr>
+                                    ))
+                            ) : activeTab === 'join' ? (
+                                joinRequests
+                                    .filter(req => joinRequestFilter === 'ALL' || req.status === joinRequestFilter)
+                                    .map(req => (
+                                        <tr key={req.id} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: req.status === 'NEW' ? '#fffbeb' : 'white' }}>
+                                            <td style={{ padding: '1rem', fontSize: '0.9rem' }}>{new Date(req.createdAt).toLocaleDateString()}</td>
+                                            <td style={{ padding: '1rem', fontWeight: '500' }}>
+                                                {req.name}
+                                                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>
+                                                    {req.experience && req.experience.length > 50 ? req.experience.substring(0, 50) + '...' : req.experience}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>{req.role}</td>
+                                            <td style={{ padding: '1rem', fontSize: '0.9rem' }}>
+                                                <div>{req.email}</div>
+                                                <div style={{ color: '#6b7280' }}>{req.phone}</div>
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                <span style={{
+                                                    padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '600',
+                                                    backgroundColor: req.status === 'NEW' ? '#fef3c7' : '#dcfce7',
+                                                    color: req.status === 'NEW' ? '#d97706' : '#166534'
+                                                }}>
+                                                    {req.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                {req.status === 'NEW' && (
+                                                    <button
+                                                        onClick={() => processJoinRequest(req.id)}
+                                                        style={{ padding: '0.4rem', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                                        title="Mark as Processed"
+                                                    >
+                                                        <span>✓ Done</span>
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
