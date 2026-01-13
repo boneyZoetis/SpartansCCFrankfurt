@@ -8,6 +8,9 @@ function AdminDashboard() {
     const [players, setPlayers] = useState([]);
     const [playerSearchQuery, setPlayerSearchQuery] = useState({ text: '', filter: 'active' });
     const [gallerySearchQuery, setGallerySearchQuery] = useState('');
+    const [registrations, setRegistrations] = useState([]);
+    const [joinFilter, setJoinFilter] = useState('new'); // new, processed, all
+    const [joinSearchQuery, setJoinSearchQuery] = useState('');
 
     // Modal State
     const [showMatchModal, setShowMatchModal] = useState(false);
@@ -121,6 +124,12 @@ function AdminDashboard() {
             // Extract unique categories
             const categories = [...new Set(galleryData.map(item => item.category))];
             setExistingCategories(categories);
+
+            const regRes = await fetch(API_URL + '/api/register');
+            if (regRes.ok) {
+                const regData = await regRes.json();
+                setRegistrations(regData);
+            }
 
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -330,6 +339,18 @@ function AdminDashboard() {
         }
     };
 
+    const processRegistration = async (id) => {
+        if (!window.confirm("Confirm processing? Ensure data is handled according to DSGVO.")) return;
+        try {
+            const res = await fetch(`${API_URL}/api/register/${id}/process`, { method: 'PUT' });
+            if (res.ok) {
+                fetchData();
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     return (
         <div style={{ fontFamily: '"Inter", sans-serif', backgroundColor: '#f9fafb', minHeight: '100vh' }}>
             {/* Top Header */}
@@ -442,6 +463,21 @@ function AdminDashboard() {
                     >
                         Gallery
                     </button>
+                    <button
+                        onClick={() => setActiveTab('join')}
+                        style={{
+                            padding: '0.75rem 2rem',
+                            backgroundColor: activeTab === 'join' ? '#7c3aed' : 'white',
+                            color: activeTab === 'join' ? 'white' : '#374151',
+                            border: activeTab === 'join' ? 'none' : '1px solid #d1d5db',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        }}
+                    >
+                        Join Requests
+                    </button>
                 </div>
 
                 {/* Content Area */}
@@ -451,9 +487,10 @@ function AdminDashboard() {
                             {activeTab === 'matches' ? 'Manage Matches' :
                                 activeTab === 'players' ? 'Manage Players' :
                                     activeTab === 'achievements' ? 'Manage Achievements' :
-                                        activeTab === 'gallery' ? 'Manage Gallery' : 'Manage Club Stats'}
+                                        activeTab === 'gallery' ? 'Manage Gallery' :
+                                            activeTab === 'join' ? 'Join Requests' : 'Manage Club Stats'}
                         </h2>
-                        {activeTab !== 'stats' && (
+                        {activeTab !== 'stats' && activeTab !== 'join' && (
                             <button
                                 onClick={() => {
                                     if (activeTab === 'matches') {
@@ -522,6 +559,51 @@ function AdminDashboard() {
                         </div>
                     )}
 
+                    {/* Join Request Search */}
+                    {activeTab === 'join' && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <input
+                                type="text"
+                                placeholder="Search requests by name or email..."
+                                value={joinSearchQuery}
+                                onChange={(e) => setJoinSearchQuery(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid #d1d5db',
+                                    fontSize: '0.9rem'
+                                }}
+                            />
+                        </div>
+                    )}
+
+                    {/* Join Request Filters */}
+                    {activeTab === 'join' && (
+                        <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
+                            {['new', 'processed', 'all'].map(filter => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setJoinFilter(filter)}
+                                    style={{
+                                        textTransform: 'capitalize',
+                                        fontWeight: joinFilter === filter ? 'bold' : 'normal',
+                                        color: joinFilter === filter ? '#7c3aed' : '#6b7280',
+                                        border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem',
+                                        display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                    }}
+                                >
+                                    {filter}
+                                    {filter === 'new' && registrations.filter(r => r.status === 'NEW').length > 0 && (
+                                        <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '99px' }}>
+                                            {registrations.filter(r => r.status === 'NEW').length}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
@@ -554,6 +636,14 @@ function AdminDashboard() {
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Sub Category</th>
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Caption</th>
                                         <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
+                                    </>
+                                ) : activeTab === 'join' ? (
+                                    <>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Name</th>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Role</th>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Status</th>
+                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Consent</th>
+                                        {joinFilter === 'new' && <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>}
                                     </>
                                 ) : (
                                     <>
@@ -721,6 +811,52 @@ function AdminDashboard() {
                                             </td>
                                         </tr>
                                     ))
+                            ) : activeTab === 'join' ? (
+                                registrations
+                                    .filter(req => {
+                                        let matchesFilter = true;
+                                        if (joinFilter === 'new') matchesFilter = req.status !== 'PROCESSED';
+                                        if (joinFilter === 'processed') matchesFilter = req.status === 'PROCESSED';
+
+                                        const q = joinSearchQuery.toLowerCase();
+                                        const matchesSearch = !q || (req.fullName && req.fullName.toLowerCase().includes(q)) || (req.email && req.email.toLowerCase().includes(q));
+
+                                        return matchesFilter && matchesSearch;
+                                    })
+                                    .map((req) => (
+                                        <tr key={req.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                            <td style={{ padding: '1rem' }}>
+                                                <div style={{ fontWeight: '500' }}>{req.fullName}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{req.email}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{req.phoneNumber}</div>
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                {req.preferredRole} ({req.experienceLevel})
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                <span style={{
+                                                    padding: '0.25rem 0.75rem',
+                                                    borderRadius: '9999px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: '600',
+                                                    backgroundColor: req.status === 'PROCESSED' ? '#d1fae5' : '#fef3c7',
+                                                    color: req.status === 'PROCESSED' ? '#065f46' : '#d97706'
+                                                }}>
+                                                    {req.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                {req.legalConsent ? <span style={{ color: 'green' }}>✓ Agreed</span> : <span style={{ color: 'red' }}>Missing</span>}
+                                            </td>
+                                            {joinFilter === 'new' && (
+                                                <td style={{ padding: '1rem' }}>
+                                                    {req.status !== 'PROCESSED' && (
+                                                        <button onClick={() => processRegistration(req.id)} style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Contacted</button>
+                                                    )}
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))
                             ) : (
                                 <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
                                     <td style={{ padding: '1rem', fontWeight: '500' }}>{stats.matchesWon}</td>
@@ -741,13 +877,15 @@ function AdminDashboard() {
                             )}
                         </tbody>
                     </table>
-                    {((activeTab === 'matches' && matches.length === 0) || (activeTab === 'players' && players.length === 0) || (activeTab === 'gallery' && galleryItems.length === 0)) && (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
-                            No {activeTab} found. Click Add to create one.
-                        </div>
-                    )}
-                </div>
-            </div>
+                    {
+                        ((activeTab === 'matches' && matches.length === 0) || (activeTab === 'players' && players.length === 0) || (activeTab === 'gallery' && galleryItems.length === 0)) && (
+                            <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                                No {activeTab} found. Click Add to create one.
+                            </div>
+                        )
+                    }
+                </div >
+            </div >
 
             {/* MATCH MODAL */}
             {

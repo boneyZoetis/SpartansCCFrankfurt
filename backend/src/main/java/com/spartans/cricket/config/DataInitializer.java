@@ -29,7 +29,16 @@ public class DataInitializer {
                                 jdbcTemplate.execute(
                                                 "ALTER TABLE player ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT FALSE");
                                 // Update existing players to be approved (migration)
-                                jdbcTemplate.execute("UPDATE player SET approved = TRUE WHERE approved IS NULL");
+                                jdbcTemplate.execute(
+                                                "UPDATE player SET legal_consent = FALSE WHERE legal_consent IS NULL");
+
+                                // Fix Schema: Registration
+                                jdbcTemplate.execute(
+                                                "ALTER TABLE registration ADD COLUMN IF NOT EXISTS status VARCHAR(255) DEFAULT 'NEW'");
+                                jdbcTemplate.execute(
+                                                "ALTER TABLE registration ADD COLUMN IF NOT EXISTS legal_consent BOOLEAN DEFAULT FALSE");
+                                jdbcTemplate.execute(
+                                                "ALTER TABLE registration ADD COLUMN IF NOT EXISTS created_at TIMESTAMP");
                         } catch (Exception e) {
                                 System.out.println("Schema update warning (might already exist): " + e.getMessage());
                         }
