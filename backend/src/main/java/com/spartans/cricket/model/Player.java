@@ -25,6 +25,29 @@ public class Player {
     private byte[] imageData;
     private String imageContentType;
     private boolean approved = false;
+    private boolean legalConsent = false;
+    private java.time.LocalDateTime createdAt;
+
+    @jakarta.persistence.PrePersist
+    protected void onCreate() {
+        createdAt = java.time.LocalDateTime.now();
+    }
+
+    public boolean isLegalConsent() {
+        return legalConsent;
+    }
+
+    public void setLegalConsent(boolean legalConsent) {
+        this.legalConsent = legalConsent;
+    }
+
+    public java.time.LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(java.time.LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
     public Player() {
     }

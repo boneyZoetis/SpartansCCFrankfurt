@@ -45,6 +45,10 @@ function AdminDashboard() {
     const [isNewCategory, setIsNewCategory] = useState(false);
     const [existingCategories, setExistingCategories] = useState([]);
 
+    // Join Requests State
+    const [joinRequests, setJoinRequests] = useState([]);
+    const [joinRequestFilter, setJoinRequestFilter] = useState('NEW');
+
     const [achievementForm, setAchievementForm] = useState({
         title: '',
         achievementYear: '',
@@ -80,25 +84,27 @@ function AdminDashboard() {
 
     const navigate = useNavigate();
 
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
         const isAuthenticated = localStorage.getItem('isAuthenticated');
         if (!isAuthenticated) {
             navigate('/login');
+        } else {
+            fetchData();
         }
-        fetchData();
     }, [navigate]);
 
     const fetchData = async () => {
         try {
+            setLoading(true);
             const matchesRes = await fetch(API_URL + '/api/matches');
             const matchesData = await matchesRes.json();
-            // Sort matches: Newest first (Descending order of date)
-            matchesData.sort((a, b) => new Date(b.matchDate) - new Date(a.matchDate));
-            setMatches(matchesData);
+            if (Array.isArray(matchesData)) setMatches(matchesData.sort((a, b) => new Date(b.matchDate) - new Date(a.matchDate)));
 
             const playersRes = await fetch(API_URL + '/api/players');
             const playersData = await playersRes.json();
-            setPlayers(playersData);
+            if (Array.isArray(playersData)) setPlayers(playersData);
 
             const statsRes = await fetch(API_URL + '/api/stats');
             if (statsRes.ok) {
@@ -114,16 +120,23 @@ function AdminDashboard() {
 
             const achievementsRes = await fetch(API_URL + '/api/achievements');
             const achievementsData = await achievementsRes.json();
-            setAchievements(achievementsData);
+            if (Array.isArray(achievementsData)) setAchievements(achievementsData);
 
             // Fetch Gallery Items
             const galleryRes = await fetch(API_URL + '/api/gallery');
             const galleryData = await galleryRes.json();
-            setGalleryItems(galleryData);
+            if (Array.isArray(galleryData)) {
+                setGalleryItems(galleryData);
+                const categories = [...new Set(galleryData.map(item => item.category))];
+                setExistingCategories(categories);
+            }
 
-            // Extract unique categories
-            const categories = [...new Set(galleryData.map(item => item.category))];
-            setExistingCategories(categories);
+            // Fetch Join Requests
+            const joinRes = await fetch(API_URL + '/api/join');
+            if (joinRes.ok) {
+                const joinData = await joinRes.json();
+                if (Array.isArray(joinData)) setJoinRequests(joinData);
+            }
 
             const regRes = await fetch(API_URL + '/api/register');
             if (regRes.ok) {
@@ -133,11 +146,14 @@ function AdminDashboard() {
 
         } catch (error) {
             console.error('Error fetching data:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleStatsSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true); // Start loading
         console.log("Submitting stats:", statsForm); // DEBUG
         try {
             const res = await fetch(API_URL + '/api/stats', {
@@ -340,7 +356,7 @@ function AdminDashboard() {
     };
 
     const processRegistration = async (id) => {
-        if (!window.confirm("Confirm processing? Ensure data is handled according to DSGVO.")) return;
+        if (!window.confirm("CONFIRM DATA PROCESSING:\n\nI confirm that I have processed this request in accordance with the German Data Protection Regulation (DSGVO).\n\nClick OK to mark as PROCESSED.")) return;
         try {
             const res = await fetch(`${API_URL}/api/register/${id}/process`, { method: 'PUT' });
             if (res.ok) {
@@ -351,6 +367,13 @@ function AdminDashboard() {
         }
     };
 
+    if (loading) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb', color: '#6b7280', fontSize: '1.2rem', fontWeight: '500' }}>
+                Loading Dashboard...
+            </div>
+        );
+    }
     return (
         <div style={{ fontFamily: '"Inter", sans-serif', backgroundColor: '#f9fafb', minHeight: '100vh' }}>
             {/* Top Header */}
@@ -477,6 +500,7 @@ function AdminDashboard() {
                         }}
                     >
                         Join Requests
+
                     </button>
                 </div>
 
@@ -559,612 +583,618 @@ function AdminDashboard() {
                         </div>
                     )}
 
-                    {/* Join Request Search */}
-                    {activeTab === 'join' && (
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <input
-                                type="text"
-                                placeholder="Search requests by name or email..."
-                                value={joinSearchQuery}
-                                onChange={(e) => setJoinSearchQuery(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.8rem',
-                                    borderRadius: '6px',
-                                    border: '1px solid #d1d5db',
-                                    fontSize: '0.9rem'
-                                }}
-                            />
-                        </div>
-                    )}
+    {/* Join Request Search */ }
+    {
+        activeTab === 'join' && (
+            <div style={{ marginBottom: '1.5rem' }}>
+                <input
+                    type="text"
+                    placeholder="Search requests by name or email..."
+                    value={joinSearchQuery}
+                    onChange={(e) => setJoinSearchQuery(e.target.value)}
+                    style={{
+                        width: '100%',
+                        padding: '0.8rem',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '0.9rem'
+                    }}
+                />
+            </div>
+        )
+    }
 
-                    {/* Join Request Filters */}
-                    {activeTab === 'join' && (
-                        <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
-                            {['new', 'processed', 'all'].map(filter => (
-                                <button
-                                    key={filter}
-                                    onClick={() => setJoinFilter(filter)}
-                                    style={{
-                                        textTransform: 'capitalize',
-                                        fontWeight: joinFilter === filter ? 'bold' : 'normal',
-                                        color: joinFilter === filter ? '#7c3aed' : '#6b7280',
-                                        border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem',
-                                        display: 'flex', alignItems: 'center', gap: '0.5rem'
-                                    }}
-                                >
-                                    {filter}
-                                    {filter === 'new' && registrations.filter(r => r.status === 'NEW').length > 0 && (
-                                        <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '99px' }}>
-                                            {registrations.filter(r => r.status === 'NEW').length}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+    {/* Join Request Filters */ }
+    {
+        activeTab === 'join' && (
+            <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
+                {['new', 'processed', 'all'].map(filter => (
+                    <button
+                        key={filter}
+                        onClick={() => setJoinFilter(filter)}
+                        style={{
+                            textTransform: 'capitalize',
+                            fontWeight: joinFilter === filter ? 'bold' : 'normal',
+                            color: joinFilter === filter ? '#7c3aed' : '#6b7280',
+                            border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem',
+                            display: 'flex', alignItems: 'center', gap: '0.5rem'
+                        }}
+                    >
+                        {filter}
+                        {filter === 'new' && registrations.filter(r => r.status === 'NEW').length > 0 && (
+                            <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '99px' }}>
+                                {registrations.filter(r => r.status === 'NEW').length}
+                            </span>
+                        )}
+                    </button>
+                ))}
+                    </div>
+                )}
 
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                {activeTab === 'matches' ? (
-                                    <>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Opponent</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Date & Time</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Venue</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Status</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
-                                    </>
-                                ) : activeTab === 'players' ? (
-                                    <>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Name</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Role</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Batting Style</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
-                                    </>
-                                ) : activeTab === 'achievements' ? (
-                                    <>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Title</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Year</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Type</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
-                                    </>
-                                ) : activeTab === 'gallery' ? (
-                                    <>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Image</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Category</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Sub Category</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Caption</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
-                                    </>
-                                ) : activeTab === 'join' ? (
-                                    <>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Name</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Role</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Status</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Consent</th>
-                                        {joinFilter === 'new' && <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>}
-                                    </>
-                                ) : (
-                                    <>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Matches Won</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Active Players</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Championships</th>
-                                        <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
-                                    </>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                        <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
                             {activeTab === 'matches' ? (
-                                matches.map(match => (
-                                    <tr key={match.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                        <td style={{ padding: '1rem', fontWeight: '500' }}>{match.opponent}</td>
-                                        <td style={{ padding: '1rem' }}>{new Date(match.matchDate).toLocaleString()}</td>
-                                        <td style={{ padding: '1rem' }}>{match.venue}</td>
+                                <>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Opponent</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Date & Time</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Venue</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Status</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
+                                </>
+                            ) : activeTab === 'players' ? (
+                                <>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Name</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Role</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Batting Style</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
+                                </>
+                            ) : activeTab === 'achievements' ? (
+                                <>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Title</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Year</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Type</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
+                                </>
+                            ) : activeTab === 'gallery' ? (
+                                <>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Image</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Category</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Sub Category</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Caption</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
+                                </>
+                            ) : activeTab === 'join' ? (
+                                <>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Name</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Role</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Status</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Consent</th>
+                                    {joinFilter === 'new' && <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>}
+                                </>
+                            ) : (
+                                <>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Matches Won</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Active Players</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Championships</th>
+                                    <th style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
+                                </>
+                            )
+                            }
+                        </tr >
+                    </thead >
+                    <tbody>
+                        {activeTab === 'matches' ? (
+                            matches.map(match => (
+                                <tr key={match.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                    <td style={{ padding: '1rem', fontWeight: '500' }}>{match.opponent}</td>
+                                    <td style={{ padding: '1rem' }}>{new Date(match.matchDate).toLocaleString()}</td>
+                                    <td style={{ padding: '1rem' }}>{match.venue}</td>
+                                    <td style={{ padding: '1rem' }}>
+                                        <span style={{
+                                            padding: '0.25rem 0.75rem',
+                                            borderRadius: '9999px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            backgroundColor: match.status === 'Completed' ? '#d1fae5' : (match.status === 'Live' ? '#fee2e2' : '#dbeafe'),
+                                            color: match.status === 'Completed' ? '#065f46' : (match.status === 'Live' ? '#b91c1c' : '#1e40af')
+                                        }}>
+                                            {match.status}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            onClick={() => {
+                                                const dateObj = new Date(match.matchDate);
+                                                const dateStr = dateObj.toISOString().split('T')[0];
+                                                const timeStr = dateObj.toTimeString().split(' ')[0].substring(0, 5);
+
+                                                setMatchForm({
+                                                    opponent: match.opponent,
+                                                    matchDate: dateStr,
+                                                    matchTime: timeStr,
+                                                    venue: match.venue,
+                                                    status: match.status,
+                                                    result: match.result || ''
+                                                });
+                                                setEditingMatchId(match.id);
+                                                setShowMatchModal(true);
+                                            }}
+                                            style={{ padding: '0.4rem 0.8rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button onClick={() => deleteMatch(match.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : activeTab === 'players' ? (
+                            <>
+                                {/* Sub-tabs for Active vs Pending */}
+                                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
+                                    <button
+                                        onClick={() => setPlayerSearchQuery(prev => ({ ...prev, filter: 'active' }))}
+                                        style={{
+                                            fontWeight: !playerSearchQuery.filter || playerSearchQuery.filter === 'active' ? 'bold' : 'normal',
+                                            color: !playerSearchQuery.filter || playerSearchQuery.filter === 'active' ? '#7c3aed' : '#6b7280',
+                                            border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem'
+                                        }}
+                                    >
+                                        Active Players
+                                    </button>
+                                    <button
+                                        onClick={() => setPlayerSearchQuery(prev => ({ ...prev, filter: 'pending' }))}
+                                        style={{
+                                            fontWeight: playerSearchQuery.filter === 'pending' ? 'bold' : 'normal',
+                                            color: playerSearchQuery.filter === 'pending' ? '#eab308' : '#6b7280',
+                                            border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem',
+                                            display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                        }}
+                                    >
+                                        Pending Approvals
+                                        {players.filter(p => !p.approved).length > 0 && (
+                                            <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '99px' }}>
+                                                {players.filter(p => !p.approved).length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {players
+                                    .filter(player => {
+                                        const matchesSearch = player.name.toLowerCase().includes((playerSearchQuery.text || '').toLowerCase());
+                                        const isPending = !player.approved; // Assumes backend sends 'approved' field
+                                        const showPending = playerSearchQuery.filter === 'pending';
+
+                                        if (showPending) return isPending && matchesSearch;
+                                        return !isPending && matchesSearch; // Default show active
+                                    })
+                                    .map(player => (
+                                        <tr key={player.id} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: !player.approved ? '#fffbeb' : 'white' }}>
+                                            <td style={{ padding: '1rem', fontWeight: '500' }}>{player.name}</td>
+                                            <td style={{ padding: '1rem' }}>{player.role}</td>
+                                            <td style={{ padding: '1rem' }}>{player.battingStyle}</td>
+                                            <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                                {!player.approved && (
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (window.confirm(`Approve ${player.name} to join the squad?`)) {
+                                                                try {
+                                                                    const res = await fetch(`${API_URL}/api/players/${player.id}/approve`, { method: 'PUT' });
+                                                                    if (res.ok) {
+                                                                        alert('Player Approved!');
+                                                                        fetchData();
+                                                                    } else alert('Approval failed');
+                                                                } catch (e) { console.error(e); alert('Error'); }
+                                                            }
+                                                        }}
+                                                        style={{ padding: '0.4rem 0.8rem', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => {
+                                                        setPlayerForm(player);
+                                                        setSelectedPlayerFile(null);
+                                                        setEditingPlayerId(player.id);
+                                                        setShowPlayerModal(true);
+                                                    }}
+                                                    style={{ padding: '0.4rem 0.8rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button onClick={() => deletePlayer(player.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                            </>
+                        ) : activeTab === 'achievements' ? (
+                            achievements.map(ach => (
+                                <tr key={ach.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                    <td style={{ padding: '1rem', fontWeight: '500' }}>{ach.title}</td>
+                                    <td style={{ padding: '1rem' }}>{ach.achievementYear}</td>
+                                    <td style={{ padding: '1rem' }}>{ach.type}</td>
+                                    <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                        <button onClick={() => deleteAchievement(ach.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : activeTab === 'gallery' ? (
+                            galleryItems
+                                .filter(item =>
+                                    (item.category && item.category.toLowerCase().includes(gallerySearchQuery.toLowerCase())) ||
+                                    (item.subCategory && item.subCategory.toLowerCase().includes(gallerySearchQuery.toLowerCase()))
+                                )
+                                .map(item => (
+                                    <tr key={item.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                        <td style={{ padding: '1rem', width: '120px' }}>
+                                            <img src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : API_URL + item.imageUrl) : ''} alt={item.caption} style={{ width: '100px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
+                                        </td>
+                                        <td style={{ padding: '1rem', fontWeight: '500' }}>{item.category}</td>
+                                        <td style={{ padding: '1rem' }}>{item.subCategory || '-'}</td>
+                                        <td style={{ padding: '1rem' }}>{item.caption}</td>
+                                        <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                            <button onClick={() => deleteGalleryItem(item.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
+                                        </td>
+                                    </tr>
+                                ))
+                        ) : activeTab === 'join' ? (
+                            registrations
+                                .filter(req => {
+                                    let matchesFilter = true;
+                                    if (joinFilter === 'new') matchesFilter = req.status !== 'PROCESSED';
+                                    if (joinFilter === 'processed') matchesFilter = req.status === 'PROCESSED';
+
+                                    const q = joinSearchQuery.toLowerCase();
+                                    const matchesSearch = !q || (req.fullName && req.fullName.toLowerCase().includes(q)) || (req.email && req.email.toLowerCase().includes(q));
+
+                                    return matchesFilter && matchesSearch;
+                                })
+                                .map((req) => (
+                                    <tr key={req.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                        <td style={{ padding: '1rem' }}>
+                                            <div style={{ fontWeight: '500' }}>{req.fullName}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{req.email}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{req.phoneNumber}</div>
+                                        </td>
+                                        <td style={{ padding: '1rem' }}>
+                                            {req.preferredRole} ({req.experienceLevel})
+                                        </td>
                                         <td style={{ padding: '1rem' }}>
                                             <span style={{
                                                 padding: '0.25rem 0.75rem',
                                                 borderRadius: '9999px',
                                                 fontSize: '0.75rem',
                                                 fontWeight: '600',
-                                                backgroundColor: match.status === 'Completed' ? '#d1fae5' : (match.status === 'Live' ? '#fee2e2' : '#dbeafe'),
-                                                color: match.status === 'Completed' ? '#065f46' : (match.status === 'Live' ? '#b91c1c' : '#1e40af')
+                                                backgroundColor: req.status === 'PROCESSED' ? '#d1fae5' : '#fef3c7',
+                                                color: req.status === 'PROCESSED' ? '#065f46' : '#d97706'
                                             }}>
-                                                {match.status}
+                                                {req.status}
                                             </span>
                                         </td>
-                                        <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                            <button
-                                                onClick={() => {
-                                                    const dateObj = new Date(match.matchDate);
-                                                    const dateStr = dateObj.toISOString().split('T')[0];
-                                                    const timeStr = dateObj.toTimeString().split(' ')[0].substring(0, 5);
-
-                                                    setMatchForm({
-                                                        opponent: match.opponent,
-                                                        matchDate: dateStr,
-                                                        matchTime: timeStr,
-                                                        venue: match.venue,
-                                                        status: match.status,
-                                                        result: match.result || ''
-                                                    });
-                                                    setEditingMatchId(match.id);
-                                                    setShowMatchModal(true);
-                                                }}
-                                                style={{ padding: '0.4rem 0.8rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
-                                            >
-                                                Edit
-                                            </button>
-                                            <button onClick={() => deleteMatch(match.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
-                                        </td>
-                                    </tr>
+                                        <td style={{ padding: '1rem' }}>
+                                            {req.legalConsent ? <span style={{ color: 'green' }}>✓ Agreed</span> : <span style={{ color: 'red' }}>Missing</span>}
+                                        </td >
+                                        {joinFilter === 'new' && (
+                                            <td style={{ padding: '1rem' }}>
+                                                {req.status !== 'PROCESSED' && (
+                                                    <button onClick={() => processRegistration(req.id)} style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Contacted</button>
+                                                )}
+                                            </td>
+                                        )
+                                        }
+                                    </tr >
                                 ))
-                            ) : activeTab === 'players' ? (
-                                <>
-                                    {/* Sub-tabs for Active vs Pending */}
-                                    <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
-                                        <button
-                                            onClick={() => setPlayerSearchQuery(prev => ({ ...prev, filter: 'active' }))}
-                                            style={{
-                                                fontWeight: !playerSearchQuery.filter || playerSearchQuery.filter === 'active' ? 'bold' : 'normal',
-                                                color: !playerSearchQuery.filter || playerSearchQuery.filter === 'active' ? '#7c3aed' : '#6b7280',
-                                                border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem'
-                                            }}
-                                        >
-                                            Active Players
-                                        </button>
-                                        <button
-                                            onClick={() => setPlayerSearchQuery(prev => ({ ...prev, filter: 'pending' }))}
-                                            style={{
-                                                fontWeight: playerSearchQuery.filter === 'pending' ? 'bold' : 'normal',
-                                                color: playerSearchQuery.filter === 'pending' ? '#eab308' : '#6b7280',
-                                                border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem',
-                                                display: 'flex', alignItems: 'center', gap: '0.5rem'
-                                            }}
-                                        >
-                                            Pending Approvals
-                                            {players.filter(p => !p.approved).length > 0 && (
-                                                <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '99px' }}>
-                                                    {players.filter(p => !p.approved).length}
-                                                </span>
-                                            )}
-                                        </button>
-                                    </div>
-
-                                    {players
-                                        .filter(player => {
-                                            const matchesSearch = player.name.toLowerCase().includes((playerSearchQuery.text || '').toLowerCase());
-                                            const isPending = !player.approved; // Assumes backend sends 'approved' field
-                                            const showPending = playerSearchQuery.filter === 'pending';
-
-                                            if (showPending) return isPending && matchesSearch;
-                                            return !isPending && matchesSearch; // Default show active
-                                        })
-                                        .map(player => (
-                                            <tr key={player.id} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: !player.approved ? '#fffbeb' : 'white' }}>
-                                                <td style={{ padding: '1rem', fontWeight: '500' }}>{player.name}</td>
-                                                <td style={{ padding: '1rem' }}>{player.role}</td>
-                                                <td style={{ padding: '1rem' }}>{player.battingStyle}</td>
-                                                <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                                    {!player.approved && (
-                                                        <button
-                                                            onClick={async () => {
-                                                                if (window.confirm(`Approve ${player.name} to join the squad?`)) {
-                                                                    try {
-                                                                        const res = await fetch(`${API_URL}/api/players/${player.id}/approve`, { method: 'PUT' });
-                                                                        if (res.ok) {
-                                                                            alert('Player Approved!');
-                                                                            fetchData();
-                                                                        } else alert('Approval failed');
-                                                                    } catch (e) { console.error(e); alert('Error'); }
-                                                                }
-                                                            }}
-                                                            style={{ padding: '0.4rem 0.8rem', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
-                                                        >
-                                                            Approve
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        onClick={() => {
-                                                            setPlayerForm(player);
-                                                            setSelectedPlayerFile(null);
-                                                            setEditingPlayerId(player.id);
-                                                            setShowPlayerModal(true);
-                                                        }}
-                                                        style={{ padding: '0.4rem 0.8rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button onClick={() => deletePlayer(player.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                </>
-                            ) : activeTab === 'achievements' ? (
-                                achievements.map(ach => (
-                                    <tr key={ach.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                        <td style={{ padding: '1rem', fontWeight: '500' }}>{ach.title}</td>
-                                        <td style={{ padding: '1rem' }}>{ach.achievementYear}</td>
-                                        <td style={{ padding: '1rem' }}>{ach.type}</td>
-                                        <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                            <button onClick={() => deleteAchievement(ach.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : activeTab === 'gallery' ? (
-                                galleryItems
-                                    .filter(item =>
-                                        (item.category && item.category.toLowerCase().includes(gallerySearchQuery.toLowerCase())) ||
-                                        (item.subCategory && item.subCategory.toLowerCase().includes(gallerySearchQuery.toLowerCase()))
-                                    )
-                                    .map(item => (
-                                        <tr key={item.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                            <td style={{ padding: '1rem', width: '120px' }}>
-                                                <img src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : API_URL + item.imageUrl) : ''} alt={item.caption} style={{ width: '100px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
-                                            </td>
-                                            <td style={{ padding: '1rem', fontWeight: '500' }}>{item.category}</td>
-                                            <td style={{ padding: '1rem' }}>{item.subCategory || '-'}</td>
-                                            <td style={{ padding: '1rem' }}>{item.caption}</td>
-                                            <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                                <button onClick={() => deleteGalleryItem(item.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
-                                            </td>
-                                        </tr>
-                                    ))
-                            ) : activeTab === 'join' ? (
-                                registrations
-                                    .filter(req => {
-                                        let matchesFilter = true;
-                                        if (joinFilter === 'new') matchesFilter = req.status !== 'PROCESSED';
-                                        if (joinFilter === 'processed') matchesFilter = req.status === 'PROCESSED';
-
-                                        const q = joinSearchQuery.toLowerCase();
-                                        const matchesSearch = !q || (req.fullName && req.fullName.toLowerCase().includes(q)) || (req.email && req.email.toLowerCase().includes(q));
-
-                                        return matchesFilter && matchesSearch;
-                                    })
-                                    .map((req) => (
-                                        <tr key={req.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                            <td style={{ padding: '1rem' }}>
-                                                <div style={{ fontWeight: '500' }}>{req.fullName}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{req.email}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{req.phoneNumber}</div>
-                                            </td>
-                                            <td style={{ padding: '1rem' }}>
-                                                {req.preferredRole} ({req.experienceLevel})
-                                            </td>
-                                            <td style={{ padding: '1rem' }}>
-                                                <span style={{
-                                                    padding: '0.25rem 0.75rem',
-                                                    borderRadius: '9999px',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: '600',
-                                                    backgroundColor: req.status === 'PROCESSED' ? '#d1fae5' : '#fef3c7',
-                                                    color: req.status === 'PROCESSED' ? '#065f46' : '#d97706'
-                                                }}>
-                                                    {req.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '1rem' }}>
-                                                {req.legalConsent ? <span style={{ color: 'green' }}>✓ Agreed</span> : <span style={{ color: 'red' }}>Missing</span>}
-                                            </td>
-                                            {joinFilter === 'new' && (
-                                                <td style={{ padding: '1rem' }}>
-                                                    {req.status !== 'PROCESSED' && (
-                                                        <button onClick={() => processRegistration(req.id)} style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Contacted</button>
-                                                    )}
-                                                </td>
-                                            )}
-                                        </tr>
-                                    ))
-                            ) : (
-                                <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                    <td style={{ padding: '1rem', fontWeight: '500' }}>{stats.matchesWon}</td>
-                                    <td style={{ padding: '1rem' }}>{stats.activePlayers}</td>
-                                    <td style={{ padding: '1rem' }}>{stats.championships}</td>
-                                    <td style={{ padding: '1rem' }}>
-                                        <button
-                                            onClick={() => {
-                                                setStatsForm(stats);
-                                                setShowStatsModal(true);
-                                            }}
-                                            style={{ padding: '0.4rem 0.8rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
-                                        >
-                                            Edit
-                                        </button>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                    {
-                        ((activeTab === 'matches' && matches.length === 0) || (activeTab === 'players' && players.length === 0) || (activeTab === 'gallery' && galleryItems.length === 0)) && (
-                            <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
-                                No {activeTab} found. Click Add to create one.
-                            </div>
+                        ) : (
+                            <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                <td style={{ padding: '1rem', fontWeight: '500' }}>{stats.matchesWon}</td>
+                                <td style={{ padding: '1rem' }}>{stats.activePlayers}</td>
+                                <td style={{ padding: '1rem' }}>{stats.championships}</td>
+                                <td style={{ padding: '1rem' }}>
+                                    <button
+                                        onClick={() => {
+                                            setStatsForm(stats);
+                                            setShowStatsModal(true);
+                                        }}
+                                        style={{ padding: '0.4rem 0.8rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                                    >
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
                         )
-                    }
-                </div >
+                        }
+                    </tbody >
+                </table >
+                {
+                    ((activeTab === 'matches' && matches.length === 0) || (activeTab === 'players' && players.length === 0) || (activeTab === 'gallery' && galleryItems.length === 0)) && (
+                        <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                            No {activeTab} found. Click Add to create one.
+                        </div>
+                    )
+                }
+            </div >
             </div >
 
-            {/* MATCH MODAL */}
-            {
-                showMatchModal && (
-                    <div style={{
-                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-                        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
-                    }}>
-                        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
-                            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>{editingMatchId ? 'Edit Match' : 'Add New Match'}</h3>
-                            <form onSubmit={handleMatchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <input type="text" placeholder="Opponent Name" required
-                                    value={matchForm.opponent} onChange={e => setMatchForm({ ...matchForm, opponent: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+            {/* MATCH MODAL */ }
+        {
+            showMatchModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>{editingMatchId ? 'Edit Match' : 'Add New Match'}</h3>
+                        <form onSubmit={handleMatchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <input type="text" placeholder="Opponent Name" required
+                                value={matchForm.opponent} onChange={e => setMatchForm({ ...matchForm, opponent: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <input type="date" required
+                                    value={matchForm.matchDate} onChange={e => setMatchForm({ ...matchForm, matchDate: e.target.value })}
+                                    style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                                 />
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <input type="date" required
-                                        value={matchForm.matchDate} onChange={e => setMatchForm({ ...matchForm, matchDate: e.target.value })}
-                                        style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                    />
-                                    <input type="time" required
-                                        value={matchForm.matchTime} onChange={e => setMatchForm({ ...matchForm, matchTime: e.target.value })}
-                                        style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                    />
-                                </div>
-                                <input type="text" placeholder="Venue" required
-                                    value={matchForm.venue} onChange={e => setMatchForm({ ...matchForm, venue: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                <input type="time" required
+                                    value={matchForm.matchTime} onChange={e => setMatchForm({ ...matchForm, matchTime: e.target.value })}
+                                    style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                                 />
-                                <select
-                                    value={matchForm.status} onChange={e => setMatchForm({ ...matchForm, status: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                >
-                                    <option value="Upcoming">Upcoming</option>
-                                    <option value="Live">Live</option>
-                                    <option value="Completed">Completed</option>
-                                </select>
-                                <input type="text" placeholder="Result / Current Status"
-                                    value={matchForm.result} onChange={e => setMatchForm({ ...matchForm, result: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                />
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                    <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save Match</button>
-                                    <button type="button" onClick={() => setShowMatchModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                                </div>
-                            </form>
-                        </div>
+                            </div>
+                            <input type="text" placeholder="Venue" required
+                                value={matchForm.venue} onChange={e => setMatchForm({ ...matchForm, venue: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <select
+                                value={matchForm.status} onChange={e => setMatchForm({ ...matchForm, status: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            >
+                                <option value="Upcoming">Upcoming</option>
+                                <option value="Live">Live</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+                            <input type="text" placeholder="Result / Current Status"
+                                value={matchForm.result} onChange={e => setMatchForm({ ...matchForm, result: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save Match</button>
+                                <button type="button" onClick={() => setShowMatchModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )
+        }
 
-            {/* PLAYER MODAL */}
-            {
-                showPlayerModal && (
-                    <div style={{
-                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-                        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
-                    }}>
-                        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-                            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>{editingPlayerId ? 'Edit Player' : 'Add New Player'}</h3>
-                            <form onSubmit={handlePlayerSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <input type="text" placeholder="Player Name" required
-                                    value={playerForm.name} onChange={e => setPlayerForm({ ...playerForm, name: e.target.value })}
+        {/* PLAYER MODAL */ }
+        {
+            showPlayerModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>{editingPlayerId ? 'Edit Player' : 'Add New Player'}</h3>
+                        <form onSubmit={handlePlayerSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <input type="text" placeholder="Player Name" required
+                                value={playerForm.name} onChange={e => setPlayerForm({ ...playerForm, name: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <select
+                                value={playerForm.role} onChange={e => setPlayerForm({ ...playerForm, role: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            >
+                                <option value="Batsman">Batsman</option>
+                                <option value="Bowler">Bowler</option>
+                                <option value="All-rounder">All-rounder</option>
+                                <option value="Wicketkeeper">Wicketkeeper</option>
+                                <option value="Captain">Captain</option>
+                            </select>
+                            <input type="text" placeholder="Batting Style (e.g. Right-hand bat)"
+                                value={playerForm.battingStyle} onChange={e => setPlayerForm({ ...playerForm, battingStyle: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <input type="text" placeholder="Bowling Style (e.g. Right-arm fast)"
+                                value={playerForm.bowlingStyle} onChange={e => setPlayerForm({ ...playerForm, bowlingStyle: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <input type="number" placeholder="Matches" style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                    value={playerForm.matches} onChange={e => setPlayerForm({ ...playerForm, matches: parseInt(e.target.value) || 0 })}
+                                />
+                                <input type="number" placeholder="Runs" style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                    value={playerForm.runs} onChange={e => setPlayerForm({ ...playerForm, runs: parseInt(e.target.value) || 0 })}
+                                />
+                                <input type="number" placeholder="Wickets" style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                    value={playerForm.wickets} onChange={e => setPlayerForm({ ...playerForm, wickets: parseInt(e.target.value) || 0 })}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.85rem', color: '#666' }}>Profile Image</label>
+                                <input type="file" accept="image/*"
+                                    onChange={e => setSelectedPlayerFile(e.target.files[0])}
                                     style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                                 />
-                                <select
-                                    value={playerForm.role} onChange={e => setPlayerForm({ ...playerForm, role: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                >
-                                    <option value="Batsman">Batsman</option>
-                                    <option value="Bowler">Bowler</option>
-                                    <option value="All-rounder">All-rounder</option>
-                                    <option value="Wicketkeeper">Wicketkeeper</option>
-                                    <option value="Captain">Captain</option>
-                                </select>
-                                <input type="text" placeholder="Batting Style (e.g. Right-hand bat)"
-                                    value={playerForm.battingStyle} onChange={e => setPlayerForm({ ...playerForm, battingStyle: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                {playerForm.imageUrl && !selectedPlayerFile && (
+                                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Current image: {playerForm.imageUrl.split('/').pop()}</p>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save Player</button>
+                                <button type="button" onClick={() => setShowPlayerModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )
+        }
+
+        {/* STATS MODAL */ }
+        {
+            showStatsModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>Update Club Stats</h3>
+                        <form onSubmit={handleStatsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#374151' }}>Matches Won</label>
+                                <input type="number" required
+                                    value={statsForm.matchesWon} onChange={e => setStatsForm({ ...statsForm, matchesWon: parseInt(e.target.value) || 0 })}
+                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                                 />
-                                <input type="text" placeholder="Bowling Style (e.g. Right-arm fast)"
-                                    value={playerForm.bowlingStyle} onChange={e => setPlayerForm({ ...playerForm, bowlingStyle: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#374151' }}>Active Players</label>
+                                <input type="number" required
+                                    value={statsForm.activePlayers} onChange={e => setStatsForm({ ...statsForm, activePlayers: parseInt(e.target.value) || 0 })}
+                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                                 />
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <input type="number" placeholder="Matches" style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                        value={playerForm.matches} onChange={e => setPlayerForm({ ...playerForm, matches: parseInt(e.target.value) || 0 })}
-                                    />
-                                    <input type="number" placeholder="Runs" style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                        value={playerForm.runs} onChange={e => setPlayerForm({ ...playerForm, runs: parseInt(e.target.value) || 0 })}
-                                    />
-                                    <input type="number" placeholder="Wickets" style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                        value={playerForm.wickets} onChange={e => setPlayerForm({ ...playerForm, wickets: parseInt(e.target.value) || 0 })}
-                                    />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <label style={{ fontSize: '0.85rem', color: '#666' }}>Profile Image</label>
-                                    <input type="file" accept="image/*"
-                                        onChange={e => setSelectedPlayerFile(e.target.files[0])}
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#374151' }}>Championships</label>
+                                <input type="number" required
+                                    value={statsForm.championships} onChange={e => setStatsForm({ ...statsForm, championships: parseInt(e.target.value) || 0 })}
+                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Update Stats</button>
+                                <button type="button" onClick={() => setShowStatsModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )
+        }
+
+        {/* ACHIEVEMENT MODAL */ }
+        {
+            showAchievementModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>Add Achievement</h3>
+                        <form onSubmit={handleAchievementSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <input type="text" placeholder="Title (e.g. League Champions)" required
+                                value={achievementForm.title} onChange={e => setAchievementForm({ ...achievementForm, title: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <input type="text" placeholder="Year (e.g. 2023)" required
+                                value={achievementForm.achievementYear} onChange={e => setAchievementForm({ ...achievementForm, achievementYear: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <select
+                                value={achievementForm.type} onChange={e => setAchievementForm({ ...achievementForm, type: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            >
+                                <option value="TROPHY">Trophy</option>
+                                <option value="MEDAL">Medal</option>
+                                <option value="STAR">Star</option>
+                                <option value="AWARD">Award</option>
+                            </select>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Add Achievement</button>
+                                <button type="button" onClick={() => setShowAchievementModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )
+        }
+
+        {/* GALLERY MODAL */ }
+        {
+            showGalleryModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>Add Gallery Image</h3>
+                        <form onSubmit={handleGallerySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#4b5563' }}>Field / Category</label>
+                                {!isNewCategory ? (
+                                    <select
+                                        value={galleryForm.category}
+                                        onChange={(e) => {
+                                            if (e.target.value === 'NEW_CATEGORY_OPTION') {
+                                                setIsNewCategory(true);
+                                                setGalleryForm({ ...galleryForm, category: '' });
+                                            } else {
+                                                setGalleryForm({ ...galleryForm, category: e.target.value });
+                                            }
+                                        }}
                                         style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                    />
-                                    {playerForm.imageUrl && !selectedPlayerFile && (
-                                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Current image: {playerForm.imageUrl.split('/').pop()}</p>
-                                    )}
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                    <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save Player</button>
-                                    <button type="button" onClick={() => setShowPlayerModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* STATS MODAL */}
-            {
-                showStatsModal && (
-                    <div style={{
-                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-                        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
-                    }}>
-                        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
-                            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>Update Club Stats</h3>
-                            <form onSubmit={handleStatsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#374151' }}>Matches Won</label>
-                                    <input type="number" required
-                                        value={statsForm.matchesWon} onChange={e => setStatsForm({ ...statsForm, matchesWon: parseInt(e.target.value) || 0 })}
-                                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#374151' }}>Active Players</label>
-                                    <input type="number" required
-                                        value={statsForm.activePlayers} onChange={e => setStatsForm({ ...statsForm, activePlayers: parseInt(e.target.value) || 0 })}
-                                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#374151' }}>Championships</label>
-                                    <input type="number" required
-                                        value={statsForm.championships} onChange={e => setStatsForm({ ...statsForm, championships: parseInt(e.target.value) || 0 })}
-                                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                    />
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                    <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Update Stats</button>
-                                    <button type="button" onClick={() => setShowStatsModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* ACHIEVEMENT MODAL */}
-            {
-                showAchievementModal && (
-                    <div style={{
-                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-                        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
-                    }}>
-                        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
-                            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>Add Achievement</h3>
-                            <form onSubmit={handleAchievementSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <input type="text" placeholder="Title (e.g. League Champions)" required
-                                    value={achievementForm.title} onChange={e => setAchievementForm({ ...achievementForm, title: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                />
-                                <input type="text" placeholder="Year (e.g. 2023)" required
-                                    value={achievementForm.achievementYear} onChange={e => setAchievementForm({ ...achievementForm, achievementYear: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                />
-                                <select
-                                    value={achievementForm.type} onChange={e => setAchievementForm({ ...achievementForm, type: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                >
-                                    <option value="TROPHY">Trophy</option>
-                                    <option value="MEDAL">Medal</option>
-                                    <option value="STAR">Star</option>
-                                    <option value="AWARD">Award</option>
-                                </select>
-
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                    <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Add Achievement</button>
-                                    <button type="button" onClick={() => setShowAchievementModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* GALLERY MODAL */}
-            {
-                showGalleryModal && (
-                    <div style={{
-                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-                        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
-                    }}>
-                        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
-                            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>Add Gallery Image</h3>
-                            <form onSubmit={handleGallerySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#4b5563' }}>Field / Category</label>
-                                    {!isNewCategory ? (
-                                        <select
-                                            value={galleryForm.category}
-                                            onChange={(e) => {
-                                                if (e.target.value === 'NEW_CATEGORY_OPTION') {
-                                                    setIsNewCategory(true);
-                                                    setGalleryForm({ ...galleryForm, category: '' });
-                                                } else {
-                                                    setGalleryForm({ ...galleryForm, category: e.target.value });
-                                                }
-                                            }}
-                                            style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                    >
+                                        <option value="">Select Category</option>
+                                        {existingCategories.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                        <option value="NEW_CATEGORY_OPTION" style={{ fontWeight: 'bold', color: '#7c3aed' }}>+ Add New Field</option>
+                                    </select>
+                                ) : (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter new field name"
+                                            autoFocus
+                                            value={newCategory}
+                                            onChange={(e) => setNewCategory(e.target.value)}
+                                            style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => { setIsNewCategory(false); setNewCategory(''); }}
+                                            style={{ padding: '0px 10px', fontSize: '0.8rem', backgroundColor: '#e5e7eb', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                                         >
-                                            <option value="">Select Category</option>
-                                            {existingCategories.map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
-                                            <option value="NEW_CATEGORY_OPTION" style={{ fontWeight: 'bold', color: '#7c3aed' }}>+ Add New Field</option>
-                                        </select>
-                                    ) : (
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <input
-                                                type="text"
-                                                placeholder="Enter new field name"
-                                                autoFocus
-                                                value={newCategory}
-                                                onChange={(e) => setNewCategory(e.target.value)}
-                                                style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => { setIsNewCategory(false); setNewCategory(''); }}
-                                                style={{ padding: '0px 10px', fontSize: '0.8rem', backgroundColor: '#e5e7eb', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
+                                            Cancel
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#4b5563' }}>Sub Category</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Enter sub category (e.g. 2023, Finals)"
-                                        value={galleryForm.subCategory || ''}
-                                        onChange={(e) => setGalleryForm({ ...galleryForm, subCategory: e.target.value })}
-                                        style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                    />
-                                </div>
-
-                                <input type="file" accept="image/*" required
-                                    onChange={e => setSelectedFile(e.target.files[0])}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#4b5563' }}>Sub Category</label>
+                                <input
+                                    type="text"
+                                    placeholder="Enter sub category (e.g. 2023, Finals)"
+                                    value={galleryForm.subCategory || ''}
+                                    onChange={(e) => setGalleryForm({ ...galleryForm, subCategory: e.target.value })}
                                     style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                                 />
-                                <input type="text" placeholder="Caption (Optional)"
-                                    value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })}
-                                    style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                />
+                            </div>
 
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                    <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Add Image</button>
-                                    <button type="button" onClick={() => setShowGalleryModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                                </div>
-                            </form>
-                        </div>
+                            <input type="file" accept="image/*" required
+                                onChange={e => setSelectedFile(e.target.files[0])}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <input type="text" placeholder="Caption (Optional)"
+                                value={galleryForm.caption} onChange={e => setGalleryForm({ ...galleryForm, caption: e.target.value })}
+                                style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: 'white', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Add Image</button>
+                                <button type="button" onClick={() => setShowGalleryModal(false)} style={{ flex: 1, backgroundColor: '#e5e7eb', color: 'black', padding: '0.75rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )
+        }
         </div >
     );
-}
+    }
 
-export default AdminDashboard;
+    export default AdminDashboard;
