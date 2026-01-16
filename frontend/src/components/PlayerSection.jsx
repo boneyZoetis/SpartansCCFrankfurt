@@ -86,13 +86,8 @@ export default function PlayerSection() {
                                                 <span className="stat-label">Matches</span>
                                                 <span className="stat-value">{player.matches}</span>
                                             </div>
-                                            <div className="stat-row">
-                                                <span className="stat-label">Runs</span>
-                                                <span className="stat-value">{player.runs}</span>
-                                            </div>
-                                            <div className="stat-row">
-                                                <span className="stat-label">Wickets</span>
-                                                <span className="stat-value">{player.wickets}</span>
+                                            <div className="stat-row" style={{ justifyContent: 'center', marginTop: '1rem' }}>
+                                                <span style={{ color: '#fbbf24', fontStyle: 'italic', fontSize: '0.9rem' }}>Stats will update soon</span>
                                             </div>
                                         </div>
                                     </div>
