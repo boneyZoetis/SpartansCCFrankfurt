@@ -197,7 +197,7 @@ function Home() {
             About Us
           </h3>
           <div className="row justify-content-center mb-5">
-            <div className="col-lg-12 text-center" style={{ fontSize: '1.2rem', lineHeight: '1.8', color: '#333' }}>
+            <div className="col-lg-12" style={{ fontSize: '1.2rem', lineHeight: '1.8', color: '#333', textAlign: 'justify' }}>
               <p className="mb-4">
                 Founded in 2021, the Frankfurt Spartans Cricket Club emerged from a shared passion for cricket and an unbreakable team spirit. We are proudly registered under TSV 05 Trebur Verein, giving us a strong foundation within the German sporting community. From humble beginnings, the Spartans have grown into a close‑knit team that blends passion, discipline, and camaraderie both on and off the pitch. Our members come from diverse backgrounds, together representing the vibrant multicultural spirit of modern cricket in Germany.
               </p>
