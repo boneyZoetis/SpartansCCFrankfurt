@@ -389,7 +389,7 @@ function AdminDashboard() {
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>⚡ Spartans Admin Dashboard</span>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>⚡ Spartans Admin Dashboard <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>v1.1</span></span>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
 
