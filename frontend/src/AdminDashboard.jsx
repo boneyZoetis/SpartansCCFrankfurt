@@ -269,11 +269,13 @@ function AdminDashboard() {
                 setEditingPlayerId(null);
                 fetchData();
             } else {
-                alert('Failed to save player');
+                const errorText = await res.text();
+                console.error("Server Error:", errorText);
+                alert(`Failed to save player. Server responded with: ${res.status} ${res.statusText}\n${errorText}`);
             }
         } catch (error) {
             console.error(error);
-            alert('Error saving player');
+            alert(`Error saving player: ${error.message}`);
         }
     };
 
