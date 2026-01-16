@@ -992,19 +992,25 @@ function AdminDashboard() {
                                     <option value="Wicketkeeper">Wicketkeeper</option>
                                     <option value="Captain">Captain</option>
                                 </select>
-                                <input type="text" placeholder="Batting Style (e.g. Right-hand bat)"
+                                <select
                                     value={playerForm.battingStyle} onChange={e => setPlayerForm({ ...playerForm, battingStyle: e.target.value })}
                                     style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                />
-                                <input type="text" placeholder="Bowling Style (e.g. Right-arm fast)"
+                                >
+                                    <option value="Right-hand bat">Right-hand bat</option>
+                                    <option value="Left-hand bat">Left-hand bat</option>
+                                </select>
+                                <select
                                     value={playerForm.bowlingStyle} onChange={e => setPlayerForm({ ...playerForm, bowlingStyle: e.target.value })}
                                     style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                />
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <input type="number" placeholder="Matches" style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                                        value={playerForm.matches} onChange={e => setPlayerForm({ ...playerForm, matches: parseInt(e.target.value) || 0 })}
-                                    />
-                                </div>
+                                >
+                                    <option value="None">None</option>
+                                    <option value="Right-arm fast">Right-arm fast</option>
+                                    <option value="Right-arm medium">Right-arm medium</option>
+                                    <option value="Right-arm spin">Right-arm spin</option>
+                                    <option value="Left-arm fast">Left-arm fast</option>
+                                    <option value="Left-arm medium">Left-arm medium</option>
+                                    <option value="Left-arm spin">Left-arm spin</option>
+                                </select>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <label style={{ fontSize: '0.85rem', color: '#666' }}>Profile Image</label>
                                     <input type="file" accept="image/*"
