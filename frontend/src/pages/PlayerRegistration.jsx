@@ -10,7 +10,8 @@ import {
     Mail,
     Phone,
     Briefcase,
-    FileText
+    FileText,
+    AlertTriangle
 } from 'lucide-react';
 import { API_URL } from '../config';
 
@@ -28,6 +29,7 @@ const JoinRequestForm = () => {
     const [status, setStatus] = useState('idle');
     const [popupMessage, setPopupMessage] = useState('');
     const [showPopup, setShowPopup] = useState(false);
+    const [duplicateWarning, setDuplicateWarning] = useState({ show: false, count: 0 });
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -48,6 +50,8 @@ const JoinRequestForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (formData.website) return; // Honeypot check
+
         const error = validateForm();
         if (error) {
             setPopupMessage(error);
@@ -57,12 +61,35 @@ const JoinRequestForm = () => {
 
         setStatus('submitting');
 
+        // Map form data to backend expected format (RegistrationController)
+        const submitData = {
+            fullName: formData.name,
+            email: formData.email,
+            phoneNumber: formData.phone,
+            preferredRole: formData.role,
+            experienceLevel: formData.experience,
+            legalConsent: formData.legalConsent
+        };
+
         try {
-            const res = await fetch(`${API_URL}/api/join`, {
+            const res = await fetch(`${API_URL}/api/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(submitData)
             });
+
+            let data;
+            try {
+                data = await res.json();
+            } catch (e) {
+                data = {};
+            }
+
+            if (res.status === 409) {
+                setDuplicateWarning({ show: true, count: data.count || 1 });
+                setStatus('idle');
+                return;
+            }
 
             if (res.ok) {
                 setStatus('success');
@@ -75,6 +102,42 @@ const JoinRequestForm = () => {
         } catch (err) {
             console.error(err);
             setPopupMessage('Server connection failed. Please check your internet.');
+            setShowPopup(true);
+            setStatus('idle');
+        }
+    };
+
+    const handleForceSubmit = async () => {
+        setStatus('submitting');
+        setDuplicateWarning({ show: false, count: 0 });
+
+        const submitData = {
+            fullName: formData.name,
+            email: formData.email,
+            phoneNumber: formData.phone,
+            preferredRole: formData.role,
+            experienceLevel: formData.experience,
+            legalConsent: formData.legalConsent
+        };
+
+        try {
+            const res = await fetch(`${API_URL}/api/register?force=true`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(submitData)
+            });
+
+            if (res.ok) {
+                setStatus('success');
+                window.scrollTo(0, 0);
+            } else {
+                setPopupMessage('Failed to process request. Please try again.');
+                setShowPopup(true);
+                setStatus('idle');
+            }
+        } catch (err) {
+            console.error(err);
+            setPopupMessage('Server connection failed.');
             setShowPopup(true);
             setStatus('idle');
         }
@@ -320,6 +383,37 @@ const JoinRequestForm = () => {
                         >
                             Review Form
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Duplicate Warning Popup */}
+            {duplicateWarning.show && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animation-fade-in">
+                    <div className="bg-[#1a1a1a] border border-yellow-500/20 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl relative">
+                        <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <AlertTriangle className="w-8 h-8 text-yellow-500" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-white mb-2">Duplicate Entry</h3>
+                        <p className="text-gray-400 mb-6">
+                            We found <span className="text-yellow-500 font-bold">{duplicateWarning.count}</span> existing request(s) with this email or phone number.
+                            <br /><br />
+                            Do you want to submit anyway?
+                        </p>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setDuplicateWarning({ show: false, count: 0 })}
+                                className="flex-1 bg-[#333] hover:bg-[#444] text-white px-6 py-3 rounded-xl font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleForceSubmit}
+                                className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+                            >
+                                Submit Again
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
