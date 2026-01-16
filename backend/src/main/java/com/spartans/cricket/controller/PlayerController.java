@@ -39,8 +39,8 @@ public class PlayerController {
             @RequestParam("battingStyle") String battingStyle,
             @RequestParam("bowlingStyle") String bowlingStyle,
             @RequestParam("matches") int matches,
-            @RequestParam("runs") int runs,
-            @RequestParam("wickets") int wickets,
+            @RequestParam(value = "runs", required = false, defaultValue = "0") int runs,
+            @RequestParam(value = "wickets", required = false, defaultValue = "0") int wickets,
             @RequestParam(value = "image", required = false) MultipartFile image) throws java.io.IOException {
 
         Player player = new Player();
@@ -84,8 +84,8 @@ public class PlayerController {
             @RequestParam("battingStyle") String battingStyle,
             @RequestParam("bowlingStyle") String bowlingStyle,
             @RequestParam("matches") int matches,
-            @RequestParam("runs") int runs,
-            @RequestParam("wickets") int wickets,
+            @RequestParam(value = "runs", required = false, defaultValue = "0") int runs,
+            @RequestParam(value = "wickets", required = false, defaultValue = "0") int wickets,
             @RequestParam(value = "image", required = false) MultipartFile image) throws java.io.IOException {
         Player player = playerRepository.findById(id).orElseThrow();
 
