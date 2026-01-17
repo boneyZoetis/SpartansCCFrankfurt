@@ -13,6 +13,7 @@ function Home() {
   const [healthCheck, setHealthCheck] = useState(null);
   const [clubStats, setClubStats] = useState({ matchesWon: '50+', activePlayers: '120', championships: '5' });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   useEffect(() => {
     fetch(`${API_URL}/api/health`)
@@ -197,13 +198,28 @@ function Home() {
             About Us
           </h3>
           <div className="row justify-content-center mb-5">
-            <div className="col-lg-12" style={{ fontSize: '1.2rem', lineHeight: '1.8', color: '#333', textAlign: 'justify' }}>
+            <div className="col-lg-12" style={{ fontSize: '1.2rem', lineHeight: '1.8', color: '#333', textAlign: 'center' }}>
               <p className="mb-4">
-                Founded in 2021, the Frankfurt Spartans Cricket Club emerged from a shared passion for cricket and an unbreakable team spirit. We are proudly registered under TSV 05 Trebur Verein, giving us a strong foundation within the German sporting community. From humble beginnings, the Spartans have grown into a close‑knit team that blends passion, discipline, and camaraderie both on and off the pitch. Our members come from diverse backgrounds, together representing the vibrant multicultural spirit of modern cricket in Germany.
+                Founded in 2021, the Frankfurt Spartans Cricket Club emerged from a shared passion for cricket and an unbreakable team spirit. We are proudly registered under TSV 05 Trebur Verein, giving us a strong foundation within the German sporting community.
               </p>
-              <p>
-                We actively compete in local and regional leagues, friendly matches, and special tournaments, always striving to deliver our best game while embracing the joy of cricket. Beyond competition, we nurture every player’s journey, from newcomers discovering cricket to seasoned athletes refining their skills, through structured training, mentorship, and match‑day experience. Our dedication goes beyond the boundary ropes. The Spartans proudly contribute to local events, youth programs, and cricket development initiatives, working to grow the sport and inspire the next generation of cricketers.
-              </p>
+              <button
+                onClick={() => setShowAboutModal(true)}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: '#1e3a8a',
+                  border: '2px solid #1e3a8a',
+                  padding: '10px 25px',
+                  borderRadius: '30px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => { e.target.style.backgroundColor = '#1e3a8a'; e.target.style.color = 'white'; }}
+                onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#1e3a8a'; }}
+              >
+                Read Our Story
+              </button>
             </div>
           </div>
           <AchievementsCarousel />
@@ -236,6 +252,92 @@ function Home() {
           <p>&copy; 2025 Spartans Cricket Club. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* About Us Modal */}
+      {showAboutModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px',
+          backdropFilter: 'blur(5px)'
+        }}
+          onClick={() => setShowAboutModal(false)}
+        >
+          <div style={{
+            backgroundColor: 'white',
+            padding: '3rem',
+            borderRadius: '16px',
+            maxWidth: '800px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            position: 'relative',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+          }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowAboutModal(false)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '25px',
+                background: 'none',
+                border: 'none',
+                fontSize: '2rem',
+                cursor: 'pointer',
+                color: '#6b7280',
+                lineHeight: 1
+              }}
+            >
+              &times;
+            </button>
+
+            <h3 style={{ color: '#1e3a8a', fontSize: '2rem', marginBottom: '1.5rem', fontWeight: '800', textAlign: 'center' }}>Our Story</h3>
+
+            <div style={{ fontSize: '1.1rem', lineHeight: '1.8', color: '#4b5563', textAlign: 'justify' }}>
+              <p style={{ marginBottom: '1.5rem' }}>
+                Founded in 2021, the Frankfurt Spartans Cricket Club emerged from a shared passion for cricket and an unbreakable team spirit. We are proudly registered under TSV 05 Trebur Verein, giving us a strong foundation within the German sporting community.
+              </p>
+              <p style={{ marginBottom: '1.5rem' }}>
+                From humble beginnings, the Spartans have grown into a close‑knit team that blends passion, discipline, and camaraderie both on and off the pitch. Our members come from diverse backgrounds, together representing the vibrant multicultural spirit of modern cricket in Germany.
+              </p>
+              <p style={{ marginBottom: '1.5rem' }}>
+                We actively compete in local and regional leagues, friendly matches, and special tournaments, always striving to deliver our best game while embracing the joy of cricket. Beyond competition, we nurture every player’s journey, from newcomers discovering cricket to seasoned athletes refining their skills, through structured training, mentorship, and match‑day experience.
+              </p>
+              <p>
+                Our dedication goes beyond the boundary ropes. The Spartans proudly contribute to local events, youth programs, and cricket development initiatives, working to grow the sport and inspire the next generation of cricketers.
+              </p>
+            </div>
+
+            <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+              <button
+                onClick={() => setShowAboutModal(false)}
+                style={{
+                  backgroundColor: '#1e3a8a',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 30px',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
